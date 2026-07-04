@@ -11,15 +11,16 @@ interface ErasNavProps {
   eras: Era[];
   currentEra?: string;
   variant?: 'horizontal' | 'vertical';
+  baseUrl?: string;
 }
 
-export default function ErasNav({ eras, currentEra, variant = 'horizontal' }: ErasNavProps) {
+export default function ErasNav({ eras, currentEra, variant = 'horizontal', baseUrl = '/timeline' }: ErasNavProps) {
   if (variant === 'vertical') {
     return (
       <nav className="space-y-1">
         <h3 className="font-serif font-semibold text-text mb-3">年代分类</h3>
         <Link
-          href="/timeline"
+          href={baseUrl}
           className={`block px-4 py-2 rounded-lg text-sm transition-colors ${
             !currentEra ? 'bg-primary text-white' : 'text-text-light hover:bg-surface'
           }`}
@@ -29,7 +30,7 @@ export default function ErasNav({ eras, currentEra, variant = 'horizontal' }: Er
         {eras.map((era) => (
           <Link
             key={era.id}
-            href={`/timeline?era=${encodeURIComponent(era.name)}`}
+            href={`${baseUrl}?era=${encodeURIComponent(era.name)}`}
             className={`block px-4 py-2 rounded-lg text-sm transition-colors ${
               currentEra === era.name
                 ? 'bg-primary text-white'
@@ -48,7 +49,7 @@ export default function ErasNav({ eras, currentEra, variant = 'horizontal' }: Er
     <nav className="overflow-x-auto scrollbar-hide">
       <div className="flex gap-2 pb-2 min-w-max">
         <Link
-          href="/timeline"
+          href={baseUrl}
           className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
             !currentEra
               ? 'bg-primary text-white'
@@ -60,7 +61,7 @@ export default function ErasNav({ eras, currentEra, variant = 'horizontal' }: Er
         {eras.map((era) => (
           <Link
             key={era.id}
-            href={`/timeline?era=${encodeURIComponent(era.name)}`}
+            href={`${baseUrl}?era=${encodeURIComponent(era.name)}`}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               currentEra === era.name
                 ? 'bg-primary text-white'

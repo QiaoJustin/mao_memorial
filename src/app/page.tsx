@@ -34,7 +34,7 @@ interface Photo {
   url: string;
   thumbnailUrl: string;
   caption: string;
-  timelineNodeId?: number;
+  nodeId?: number | null;
 }
 
 interface Message {

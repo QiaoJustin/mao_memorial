@@ -6,6 +6,7 @@ interface PhotoCardProps {
   thumbnailUrl: string;
   caption: string;
   timelineNodeId?: number;
+  nodeId?: number | null;
   timelineNodeTitle?: string;
 }
 
@@ -15,8 +16,10 @@ export default function PhotoCard({
   thumbnailUrl,
   caption,
   timelineNodeId,
+  nodeId,
 }: PhotoCardProps) {
-  const linkHref = timelineNodeId ? `/timeline/${timelineNodeId}` : `/photos/${id}`;
+  const actualNodeId = timelineNodeId ?? nodeId ?? undefined;
+  const linkHref = actualNodeId ? `/timeline/${actualNodeId}` : `/photos/${id}`;
 
   return (
     <Link

@@ -12,8 +12,8 @@ interface SearchResult {
   title: string;
   description: string;
   date: string;
-  relevance: number;
-  photoUrl?: string;
+  relevanceScore: number;
+  thumbnailUrl?: string;
 }
 
 interface HotSearch {
@@ -75,7 +75,7 @@ export default function SearchPage({ searchParams }: PageProps) {
         const data = await res.json();
 
         if (data.code === 200) {
-          setResults(data.data.list || []);
+          setResults(data.data.items || []);
           setTotal(data.data.total || 0);
 
           const newHistory = [query, ...searchHistory.filter((h) => h !== query)].slice(0, MAX_HISTORY);
@@ -153,10 +153,10 @@ export default function SearchPage({ searchParams }: PageProps) {
                       href={`/timeline/${result.id}`}
                       className="card group flex flex-col md:flex-row gap-4 p-4 hover:shadow-lg transition-all"
                     >
-                      {result.photoUrl && (
+                      {result.thumbnailUrl && (
                         <div className="w-full md:w-48 h-32 md:h-40 rounded-lg overflow-hidden flex-shrink-0">
                           <img
-                            src={result.photoUrl}
+                            src={result.thumbnailUrl}
                             alt={result.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
@@ -165,7 +165,7 @@ export default function SearchPage({ searchParams }: PageProps) {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="tag bg-accent/10 text-accent text-xs">
-                            相关度 {result.relevance}%
+                            相关度 {result.relevanceScore}%
                           </span>
                           <span className="text-xs text-text-light">{result.date}</span>
                         </div>

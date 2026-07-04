@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   const cacheKey = getPhotosCacheKey(validPage, validPageSize, era, year);
   const cached = await getCache(cacheKey);
 
-  if (cached && !nodeId) {
+  if (cached && !nodeId && cached.items && cached.items.length > 0) {
     return NextResponse.json({
       code: 200,
       message: 'success',
@@ -51,8 +51,17 @@ export async function GET(request: Request) {
     where.nodeId = nodeId;
   }
 
+  let eraId: string | undefined;
   if (era) {
-    where.node = { eraId: era };
+    const eraRecord = await prisma.era.findFirst({
+      where: { name: era },
+      select: { id: true },
+    });
+    eraId = eraRecord?.id;
+  }
+
+  if (eraId) {
+    where.node = { eraId };
   }
 
   if (year) {

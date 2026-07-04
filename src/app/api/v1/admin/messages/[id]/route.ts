@@ -2,7 +2,8 @@ import { prisma } from '@/lib/db';
 import { verifyToken, hasRole } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const payload = verifyToken(token || '');
   
@@ -11,7 +12,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 
   const message = await prisma.message.findUnique({
-    where: { id: BigInt(params.id), isDeleted: false },
+    where: { id: BigInt(resolvedParams.id), isDeleted: false },
     include: { reviewer: { select: { id: true, name: true } } },
   });
 
@@ -22,7 +23,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
   return NextResponse.json({ code: 200, data: message });
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const payload = verifyToken(token || '');
   
@@ -31,7 +33,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 
   const message = await prisma.message.update({
-    where: { id: BigInt(params.id), isDeleted: false },
+    where: { id: BigInt(resolvedParams.id), isDeleted: false },
     data: { isDeleted: true },
   });
 

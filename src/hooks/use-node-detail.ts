@@ -12,11 +12,6 @@ interface Tag {
   name: string;
 }
 
-interface Era {
-  id: number;
-  name: string;
-}
-
 export interface TimelineNodeDetail {
   id: number;
   title: string;
@@ -26,7 +21,8 @@ export interface TimelineNodeDetail {
   location: string;
   viewCount: number;
   isFeatured: boolean;
-  era: Era;
+  eraId: string;
+  eraName: string;
   photos: Photo[];
   tags: Tag[];
 }

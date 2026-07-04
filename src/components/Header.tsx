@@ -21,7 +21,7 @@ export default function Header() {
   const navItems = [
     { label: '首页', href: '/' },
     { label: '时间轴', href: '/timeline' },
-    { label: '照片画廊', href: '/gallery' },
+    { label: '照片画廊', href: '/photos' },
     { label: '留言纪念', href: '/messages' },
   ];
 

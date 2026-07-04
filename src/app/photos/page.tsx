@@ -21,7 +21,7 @@ interface Photo {
   url: string;
   thumbnailUrl: string;
   caption: string;
-  timelineNodeId?: number;
+  nodeId?: number | null;
 }
 
 interface PageProps {
@@ -36,7 +36,16 @@ async function fetchEras(): Promise<Era[]> {
   try {
     const res = await fetch('/api/v1/eras', { cache: 'force-cache' });
     const data = await res.json();
-    return data.data || [];
+    const erasData = data.data || [];
+    return erasData.map((era: any) => {
+      const [startYear, endYear] = era.period?.split('-').map((y: string) => parseInt(y, 10)) || [0, 0];
+      return {
+        id: era.id,
+        name: era.name,
+        startYear,
+        endYear,
+      };
+    });
   } catch {
     return [];
   }
@@ -52,7 +61,7 @@ async function fetchPhotos(
     if (era) url += `&era=${encodeURIComponent(era)}`;
     if (year) url += `&year=${year}`;
     
-    const res = await fetch(url, { cache: 'force-cache' });
+    const res = await fetch(url, { cache: 'no-store' });
     const data = await res.json();
     const responseData = data.data || { items: [], total: 0, totalPages: 0 };
     return {
@@ -109,7 +118,7 @@ export default function PhotosPage({ searchParams }: PageProps) {
               <Image className="w-4 h-4" />
               年代分类
             </h3>
-            <ErasNav eras={eras} currentEra={era} />
+            <ErasNav eras={eras} currentEra={era} baseUrl="/photos" />
           </div>
 
           <div className="mb-8">

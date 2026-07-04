@@ -131,7 +131,7 @@ export default function NodeDetailModal() {
                       {node.title}
                     </h2>
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="tag bg-primary/10 text-primary">{node.era.name}</span>
+                      <span className="tag bg-primary/10 text-primary">{node.eraName}</span>
                       {node.location && (
                         <span className="text-sm text-text-light">{node.location}</span>
                       )}

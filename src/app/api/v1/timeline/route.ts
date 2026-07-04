@@ -48,7 +48,13 @@ export async function GET(request: Request) {
   };
 
   if (era) {
-    where.eraId = era;
+    const eraRecord = await prisma.era.findFirst({
+      where: { name: era },
+      select: { id: true },
+    });
+    if (eraRecord?.id) {
+      where.eraId = eraRecord.id;
+    }
   }
 
   if (year) {

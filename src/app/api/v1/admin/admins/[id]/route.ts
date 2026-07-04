@@ -2,7 +2,8 @@ import { prisma } from '@/lib/db';
 import { verifyToken, hasRole } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const payload = verifyToken(token || '');
   
@@ -11,7 +12,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 
   const admin = await prisma.admin.findUnique({
-    where: { id: BigInt(params.id), isDeleted: false },
+    where: { id: BigInt(resolvedParams.id), isDeleted: false },
     select: {
       id: true,
       username: true,
@@ -33,7 +34,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
   return NextResponse.json({ code: 200, data: admin });
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const payload = verifyToken(token || '');
   
@@ -44,7 +46,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const body = await request.json();
 
   const admin = await prisma.admin.update({
-    where: { id: BigInt(params.id), isDeleted: false },
+    where: { id: BigInt(resolvedParams.id), isDeleted: false },
     data: {
       name: body.name,
       email: body.email,
@@ -67,7 +69,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   return NextResponse.json({ code: 200, data: admin });
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const payload = verifyToken(token || '');
   
@@ -76,7 +79,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 
   const admin = await prisma.admin.update({
-    where: { id: BigInt(params.id), isDeleted: false },
+    where: { id: BigInt(resolvedParams.id), isDeleted: false },
     data: { isDeleted: true },
   });
 

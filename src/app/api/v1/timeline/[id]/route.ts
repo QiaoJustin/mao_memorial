@@ -4,8 +4,9 @@ import { getCache, setCache, getNodeCacheKey } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const id = parseInt(params.id, 10);
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = parseInt(resolvedParams.id, 10);
 
   if (isNaN(id)) {
     return NextResponse.json({

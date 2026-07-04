@@ -30,7 +30,7 @@ export default function SearchBar({
         const response = await fetch(`/api/v1/search/suggest?q=${encodeURIComponent(query)}`);
         const data = await response.json();
         if (data.code === 200) {
-          setSuggestions(data.data || []);
+          setSuggestions(data.data.suggestions || []);
         }
       } catch {
         setSuggestions([]);

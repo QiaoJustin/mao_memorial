@@ -2,7 +2,8 @@ import { prisma } from '@/lib/db';
 import { verifyToken, hasRole } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
-export async function PUT(request: Request, { params }: { params: { key: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ key: string }> }) {
+  const resolvedParams = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const payload = verifyToken(token || '');
   
@@ -13,7 +14,7 @@ export async function PUT(request: Request, { params }: { params: { key: string 
   const body = await request.json();
 
   const setting = await prisma.setting.upsert({
-    where: { key: params.key },
+    where: { key: resolvedParams.key },
     update: {
       value: body.value,
       type: body.type || 'string',
@@ -21,7 +22,7 @@ export async function PUT(request: Request, { params }: { params: { key: string 
       description: body.description,
     },
     create: {
-      key: params.key,
+      key: resolvedParams.key,
       value: body.value,
       type: body.type || 'string',
       category: body.category || 'general',
