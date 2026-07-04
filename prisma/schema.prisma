@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Era {
+  id          String        @id @db.VarChar(32)
+  name        String        @db.VarChar(50)
+  period      String        @db.VarChar(50)
+  description String?       @db.Text
+  icon        String?       @db.VarChar(50)
+  color       String?       @db.VarChar(20)
+  sortOrder   Int           @map("sort_order")
+  nodeCount   Int           @default(0) @map("node_count")
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  nodes       TimelineNode[]
+
+  @@index([sortOrder])
+  @@map("eras")
+}
+
+model TimelineNode {
+  id                BigInt        @id @default(autoincrement())
+  date              String        @db.VarChar(50)
+  dateSort          DateTime      @map("date_sort") @db.Date
+  year              Int
+  eraId             String        @map("era_id") @db.VarChar(32)
+  title             String        @db.VarChar(200)
+  description       String        @db.Text
+  historicalContext String?       @map("historical_context") @db.Text
+  thumbnailUrl      String        @map("thumbnail_url") @db.VarChar(500)
+  photoCount        Int           @default(1) @map("photo_count")
+  viewCount         Int           @default(0) @map("view_count")
+  likeCount         Int           @default(0) @map("like_count")
+  sortOrder         Int           @map("sort_order")
+  isPublished       Boolean       @default(true) @map("is_published")
+  isFeatured        Boolean       @default(false) @map("is_featured")
+  seoTitle          String?       @map("seo_title") @db.VarChar(200)
+  seoDescription    String?       @map("seo_description") @db.VarChar(500)
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  isDeleted         Boolean       @default(false) @map("is_deleted")
+
+  era               Era           @relation(fields: [eraId], references: [id], onUpdate: Cascade)
+  photos            Photo[]
+  tags              NodeTag[]
+
+  @@index([dateSort])
+  @@index([year])
+  @@index([eraId])
+  @@index([sortOrder])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([viewCount(sort: Desc)])
+  @@map("timeline_nodes")
+}
+
+model Photo {
+  id            BigInt        @id @default(autoincrement())
+  nodeId        BigInt        @map("node_id")
+  url           String        @db.VarChar(500)
+  thumbnailUrl  String        @map("thumbnail_url") @db.VarChar(500)
+  mediumUrl     String?       @map("medium_url") @db.VarChar(500)
+  largeUrl      String?       @map("large_url") @db.VarChar(500)
+  caption       String        @db.VarChar(500)
+  altText       String?       @map("alt_text") @db.VarChar(200)
+  width         Int?
+  height        Int?
+  fileSize      Int?          @map("file_size")
+  sortOrder     Int           @default(0) @map("sort_order")
+  isCover       Boolean       @default(false) @map("is_cover")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  isDeleted     Boolean       @default(false) @map("is_deleted")
+
+  node          TimelineNode  @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@index([nodeId])
+  @@index([sortOrder])
+  @@index([isCover])
+  @@map("photos")
+}
+
+model Tag {
+  id           BigInt        @id @default(autoincrement())
+  name         String        @db.VarChar(50)
+  slug         String        @unique @db.VarChar(50)
+  description  String?       @db.VarChar(200)
+  color        String?       @db.VarChar(20)
+  usageCount   Int           @default(0) @map("usage_count")
+  sortOrder    Int           @default(0) @map("sort_order")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  isDeleted    Boolean       @default(false) @map("is_deleted")
+
+  nodes        NodeTag[]
+
+  @@index([name])
+  @@index([usageCount(sort: Desc)])
+  @@map("tags")
+}
+
+model NodeTag {
+  nodeId    BigInt        @map("node_id")
+  tagId     BigInt        @map("tag_id")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  node      TimelineNode  @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  tag       Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([nodeId, tagId])
+  @@index([tagId])
+  @@map("node_tags")
+}
+
+model Message {
+  id              BigInt        @id @default(autoincrement())
+  nickname        String        @default("匿名网友") @db.VarChar(50)
+  content         String        @db.VarChar(500)
+  contentFiltered String?       @map("content_filtered") @db.VarChar(500)
+  ipAddress       String        @map("ip_address") @db.VarChar(45)
+  userAgent       String?       @map("user_agent") @db.VarChar(500)
+  status          MessageStatus @default(pending)
+  rejectReason    String?       @map("reject_reason") @db.VarChar(200)
+  reviewedBy      BigInt?       @map("reviewed_by")
+  reviewedAt      DateTime?     @map("reviewed_at")
+  likeCount       Int           @default(0) @map("like_count")
+  isPinned        Boolean       @default(false) @map("is_pinned")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  isDeleted       Boolean       @default(false) @map("is_deleted")
+
+  reviewer        Admin?        @relation(fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@index([ipAddress])
+  @@index([reviewedBy])
+  @@map("messages")
+}
+
+enum MessageStatus {
+  pending
+  approved
+  rejected
+}
+
+model Admin {
+  id               BigInt        @id @default(autoincrement())
+  username         String        @unique @db.VarChar(50)
+  passwordHash     String        @map("password_hash") @db.VarChar(255)
+  name             String        @db.VarChar(50)
+  email            String?       @unique @db.VarChar(100)
+  phone            String?       @db.VarChar(20)
+  avatarUrl        String?       @map("avatar_url") @db.VarChar(500)
+  role             AdminRole     @default(editor)
+  status           AdminStatus   @default(active)
+  lastLoginAt      DateTime?     @map("last_login_at")
+  lastLoginIp      String?       @map("last_login_ip") @db.VarChar(45)
+  loginCount       Int           @default(0) @map("login_count")
+  failedLoginCount Int           @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?     @map("locked_until")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  isDeleted        Boolean       @default(false) @map("is_deleted")
+
+  reviewedMessages Message[]
+
+  @@index([role])
+  @@index([status])
+  @@map("admins")
+}
+
+enum AdminRole {
+  super_admin
+  admin
+  editor
+}
+
+enum AdminStatus {
+  active
+  locked
+  disabled
+}
+
+model SensitiveWord {
+  id          BigInt        @id @default(autoincrement())
+  word        String        @unique @db.VarChar(100)
+  level       Int           @default(1) @db.TinyInt
+  category    String?       @db.VarChar(50)
+  replacement String        @default("*") @db.VarChar(100)
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([level])
+  @@index([category])
+  @@index([isActive])
+  @@map("sensitive_words")
+}
+
+model AccessLog {
+  id           BigInt        @id @default(autoincrement())
+  path         String        @db.VarChar(500)
+  method       String        @db.VarChar(10)
+  statusCode   Int           @map("status_code")
+  ipAddress    String        @map("ip_address") @db.VarChar(45)
+  userAgent    String?       @map("user_agent") @db.VarChar(500)
+  referer      String?       @db.VarChar(500)
+  sessionId    String?       @map("session_id") @db.VarChar(100)
+  nodeId       BigInt?       @map("node_id")
+  responseTime Int?          @map("response_time")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([ipAddress])
+  @@index([nodeId])
+  @@index([statusCode])
+  @@map("access_logs")
+}
+
+model Setting {
+  id          BigInt        @id @default(autoincrement())
+  key         String        @unique @db.VarChar(100)
+  value       String?       @db.Text
+  type        SettingType   @default(string)
+  category    String        @default("general") @db.VarChar(50)
+  description String?       @db.VarChar(200)
+  isPublic    Boolean       @default(false) @map("is_public")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([isPublic])
+  @@map("settings")
+}
+
+enum SettingType {
+  string
+  number
+  boolean
+  json
+}

@@ -1,0 +1,39 @@
+import { prisma } from '@/lib/db';
+import { verifyToken, hasRole } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const payload = verifyToken(token || '');
+  
+  if (!payload || !hasRole(payload.role, 'editor')) {
+    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const message = await prisma.message.findUnique({
+    where: { id: BigInt(params.id), isDeleted: false },
+    include: { reviewer: { select: { id: true, name: true } } },
+  });
+
+  if (!message) {
+    return NextResponse.json({ code: 404, message: 'Message not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ code: 200, data: message });
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const payload = verifyToken(token || '');
+  
+  if (!payload || !hasRole(payload.role, 'admin')) {
+    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const message = await prisma.message.update({
+    where: { id: BigInt(params.id), isDeleted: false },
+    data: { isDeleted: true },
+  });
+
+  return NextResponse.json({ code: 200, data: message });
+}
