@@ -1,58 +1,56 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getCache, setCache, getFeaturedCacheKey } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+interface FeaturedQuery {
+  limit: number;
+}
+
+function parseQueryParams(request: Request): FeaturedQuery {
   const url = new URL(request.url);
-  const limit = Math.min(20, Math.max(1, parseInt(url.searchParams.get('limit') || '5', 10)));
+  return {
+    limit: parseInt(url.searchParams.get('limit') || '6', 10),
+  };
+}
 
-  const cacheKey = getFeaturedCacheKey(limit);
-  const cached = await getCache(cacheKey);
-
-  if (cached) {
-    return NextResponse.json({
-      code: 200,
-      message: 'success',
-      data: cached,
-      timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    });
-  }
+export async function GET(request: Request) {
+  const { limit } = parseQueryParams(request);
+  
+  const validLimit = Math.min(20, Math.max(1, limit));
 
   const nodes = await prisma.timelineNode.findMany({
-    where: { isPublished: true, isFeatured: true },
-    take: limit,
-    orderBy: { sortOrder: 'asc' },
+    where: { isPublished: true },
+    take: validLimit,
+    orderBy: { viewCount: 'desc' },
     include: {
       era: { select: { name: true } },
       photos: {
         where: { isCover: true },
-        select: { thumbnailUrl: true, url: true },
+        select: { url: true, thumbnailUrl: true },
         take: 1,
       },
     },
   });
 
-  const result = nodes.map(node => {
+  const items = nodes.map(node => {
     const coverPhoto = node.photos[0];
     return {
       id: Number(node.id),
       date: node.date,
+      year: Number(node.year),
+      eraName: node.era?.name || '',
       title: node.title,
       description: node.description,
-      thumbnailUrl: coverPhoto?.thumbnailUrl || coverPhoto?.url || '',
-      eraName: node.era?.name || '',
+      photoUrl: coverPhoto?.thumbnailUrl || coverPhoto?.url || '',
+      viewCount: Number(node.viewCount || 0),
     };
   });
-
-  await setCache(cacheKey, result);
 
   return NextResponse.json({
     code: 200,
     message: 'success',
-    data: result,
+    data: items,
     timestamp: Date.now(),
     requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   });

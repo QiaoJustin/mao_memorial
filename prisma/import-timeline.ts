@@ -1,130 +1,105 @@
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
-interface TimelinePhoto {
-  url: string;
-  caption: string;
-  isCover: boolean;
-}
-
-interface TimelineNodeData {
+interface TimelineNode {
+  id: number;
   date: string;
-  dateSort: string;
-  year: number;
-  eraId: string;
-  title: string;
   description: string;
-  historicalContext?: string;
-  thumbnailUrl: string;
-  photos: TimelinePhoto[];
-  sortOrder: number;
-  isFeatured?: boolean;
+  images: Array<{
+    filename: string;
+    local_path: string;
+  }>;
+  era: string;
+  sort_order: number;
 }
 
-const timelineData: TimelineNodeData[] = [
-  { date: '1918年3月', dateSort: '1918-03-01', year: 1918, eraId: 'youth', title: '第一次到北京', description: '毛泽东第一次到北京，在北京大学图书馆担任助理员，开始接触马克思主义。', historicalContext: '1918年，毛泽东为组织湖南青年赴法勤工俭学来到北京。在此期间，他结识了李大钊、陈独秀等革命先驱，开始系统学习马克思主义理论。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20young%20Beijing%201918%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20young%20Beijing%201918%20historical%20photo&image_size=landscape_4_3', caption: '1918年毛泽东在北京大学图书馆', isCover: true }], sortOrder: 1 },
-  { date: '1919年1月', dateSort: '1919-01-01', year: 1919, eraId: 'youth', title: '五四运动爆发', description: '五四运动爆发，毛泽东积极组织湖南学生运动，创办《湘江评论》。', historicalContext: '1919年五四运动爆发后，毛泽东在湖南领导学生运动，创办《湘江评论》，发表大量文章宣传新文化和马克思主义。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=May%20Fourth%20Movement%201919%20students%20protest%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=May%20Fourth%20Movement%201919%20students%20protest%20historical%20photo&image_size=landscape_4_3', caption: '五四运动中的学生游行', isCover: true }], sortOrder: 2 },
-  { date: '1920年11月', dateSort: '1920-11-01', year: 1920, eraId: 'youth', title: '创建湖南共产主义小组', description: '毛泽东在长沙创建湖南共产主义小组，成为中国共产党早期组织成员之一。', historicalContext: '1920年秋，毛泽东在长沙建立了共产主义小组，积极传播马克思主义，为湖南地区的革命活动奠定了基础。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Communist%20Party%20meeting%20Changsha%201920%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Communist%20Party%20meeting%20Changsha%201920%20historical%20photo&image_size=landscape_4_3', caption: '湖南共产主义小组会议旧址', isCover: true }], sortOrder: 3 },
-  { date: '1921年7月', dateSort: '1921-07-01', year: 1921, eraId: 'youth', title: '出席中共一大', description: '毛泽东代表湖南共产主义小组出席中国共产党第一次全国代表大会。', historicalContext: '1921年7月，中国共产党第一次全国代表大会在上海召开，毛泽东作为湖南代表参加了会议，成为党的创始人之一。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Communist%20Party%20First%20Congress%201921%20Shanghai%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Communist%20Party%20First%20Congress%201921%20Shanghai%20historical%20photo&image_size=landscape_4_3', caption: '中共一大会议旧址', isCover: true }], sortOrder: 4, isFeatured: true },
-  { date: '1923年6月', dateSort: '1923-06-01', year: 1923, eraId: 'youth', title: '出席中共三大', description: '毛泽东出席中国共产党第三次全国代表大会，当选为中央执行委员。', historicalContext: '1923年6月，中共三大在广州召开，毛泽东当选为中央执行委员，确立了国共合作的方针。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Communist%20Party%20Third%20Congress%201923%20Guangzhou%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Communist%20Party%20Third%20Congress%201923%20Guangzhou%20historical%20photo&image_size=landscape_4_3', caption: '中共三大会议场景', isCover: true }], sortOrder: 5 },
-  { date: '1926年1月', dateSort: '1926-01-01', year: 1926, eraId: 'youth', title: '出席国民党二大', description: '毛泽东出席中国国民党第二次全国代表大会，当选为国民党中央候补执行委员。', historicalContext: '1926年1月，毛泽东出席国民党二大，当选为国民党中央候补执行委员，并担任国民党中央宣传部代理部长。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Kuomintang%20Congress%201926%20Guangzhou%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Kuomintang%20Congress%201926%20Guangzhou%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '国民党第二次全国代表大会', isCover: true }], sortOrder: 6 },
-  { date: '1927年8月', dateSort: '1927-08-01', year: 1927, eraId: 'revolution', title: '领导秋收起义', description: '毛泽东领导秋收起义，创建中国工农革命军第一师。', historicalContext: '1927年8月7日，中共中央召开八七会议，确定了土地革命和武装反抗国民党反动派的总方针。毛泽东作为中央特派员到湖南领导秋收起义。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Autumn%20Harvest%20Uprising%201927%20Mao%20Zedong%20revolutionary%20army%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Autumn%20Harvest%20Uprising%201927%20Mao%20Zedong%20revolutionary%20army%20historical%20photo&image_size=landscape_4_3', caption: '秋收起义部队', isCover: true }], sortOrder: 7, isFeatured: true },
-  { date: '1927年10月', dateSort: '1927-10-01', year: 1927, eraId: 'revolution', title: '创建井冈山革命根据地', description: '毛泽东率领秋收起义部队到达井冈山，创建第一个农村革命根据地。', historicalContext: '1927年10月，毛泽东率领秋收起义部队到达井冈山，开始创建中国第一个农村革命根据地，开辟了以农村包围城市、武装夺取政权的正确道路。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Jinggangshan%20Mountain%20revolutionary%20base%201927%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Jinggangshan%20Mountain%20revolutionary%20base%201927%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '井冈山革命根据地', isCover: true }], sortOrder: 8, isFeatured: true },
-  { date: '1928年4月', dateSort: '1928-04-01', year: 1928, eraId: 'revolution', title: '井冈山会师', description: '朱德、陈毅率领的南昌起义余部与毛泽东领导的工农革命军在井冈山会师。', historicalContext: '1928年4月，朱德、陈毅率领的南昌起义余部和湘南起义农军到达井冈山，与毛泽东领导的工农革命军胜利会师。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Jinggangshan%20meeting%201928%20Zhu%20De%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Jinggangshan%20meeting%201928%20Zhu%20De%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '井冈山会师', isCover: true }], sortOrder: 9, isFeatured: true },
-  { date: '1930年1月', dateSort: '1930-01-01', year: 1930, eraId: 'revolution', title: '发表《星星之火，可以燎原》', description: '毛泽东撰写《星星之火，可以燎原》，阐明了中国革命道路的理论。', historicalContext: '1930年1月，毛泽东给林彪写了一封信，批判了党内存在的悲观思想，阐明了中国革命必须走农村包围城市道路的理论，标志着毛泽东思想的初步形成。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20writing%20document%201930%20revolutionary%20base%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20writing%20document%201930%20revolutionary%20base%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东在革命根据地写作', isCover: true }], sortOrder: 10 },
-  { date: '1931年11月', dateSort: '1931-11-01', year: 1931, eraId: 'revolution', title: '当选中华苏维埃共和国主席', description: '中华苏维埃第一次全国代表大会召开，毛泽东当选为中华苏维埃共和国临时中央政府主席。', historicalContext: '1931年11月7日，中华苏维埃第一次全国代表大会在瑞金召开，成立了中华苏维埃共和国临时中央政府，毛泽东当选为主席。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Soviet%20Congress%201931%20Ruijin%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Soviet%20Congress%201931%20Ruijin%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '中华苏维埃第一次全国代表大会', isCover: true }], sortOrder: 11 },
-  { date: '1934年10月', dateSort: '1934-10-01', year: 1934, eraId: 'revolution', title: '开始长征', description: '中央红军开始长征，离开中央革命根据地。', historicalContext: '1934年10月，由于第五次反"围剿"失败，中央红军被迫实行战略转移，开始了著名的长征。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Long%20March%20start%201934%20Red%20Army%20departure%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Long%20March%20start%201934%20Red%20Army%20departure%20historical%20photo&image_size=landscape_4_3', caption: '中央红军开始长征', isCover: true }], sortOrder: 12, isFeatured: true },
-  { date: '1935年1月', dateSort: '1935-01-01', year: 1935, eraId: 'revolution', title: '遵义会议', description: '遵义会议召开，确立了毛泽东在党中央和红军的领导地位。', historicalContext: '1935年1月，中共中央在贵州遵义召开政治局扩大会议，批判了"左"倾错误路线，确立了毛泽东在党中央和红军的领导地位。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Zunyi%20Conference%201935%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Zunyi%20Conference%201935%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '遵义会议旧址', isCover: true }], sortOrder: 13, isFeatured: true },
-  { date: '1935年10月', dateSort: '1935-10-01', year: 1935, eraId: 'revolution', title: '长征胜利到达陕北', description: '中央红军长征胜利到达陕北吴起镇，完成战略转移。', historicalContext: '1935年10月19日，中央红军到达陕北吴起镇，与陕北红军胜利会师，标志着中央红军长征的胜利结束。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Long%20March%20arrival%20Shaanxi%201935%20Wuqi%20town%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Long%20March%20arrival%20Shaanxi%201935%20Wuqi%20town%20historical%20photo&image_size=landscape_4_3', caption: '中央红军到达陕北吴起镇', isCover: true }], sortOrder: 14, isFeatured: true },
-  { date: '1936年10月', dateSort: '1936-10-01', year: 1936, eraId: 'revolution', title: '三大主力红军会师', description: '红二、四方面军与红一方面军在甘肃会宁会师，长征全面胜利结束。', historicalContext: '1936年10月，红二、四方面军到达甘肃会宁地区，与红一方面军胜利会师，三大主力红军的长征全部胜利结束。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Three%20Red%20Army%20corps%20meeting%20Huining%201936%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Three%20Red%20Army%20corps%20meeting%20Huining%201936%20historical%20photo&image_size=landscape_4_3', caption: '三大主力红军会宁会师', isCover: true }], sortOrder: 15, isFeatured: true },
-  { date: '1937年7月', dateSort: '1937-07-01', year: 1937, eraId: 'yanan', title: '卢沟桥事变', description: '卢沟桥事变爆发，全国抗日战争开始。', historicalContext: '1937年7月7日，日本发动卢沟桥事变，全面抗日战争开始。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Marco%20Polo%20Bridge%20Incident%201937%20Japanese%20invasion%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Marco%20Polo%20Bridge%20Incident%201937%20Japanese%20invasion%20historical%20photo&image_size=landscape_4_3', caption: '卢沟桥事变', isCover: true }], sortOrder: 16 },
-  { date: '1937年8月', dateSort: '1937-08-01', year: 1937, eraId: 'yanan', title: '洛川会议', description: '中共中央召开洛川会议，确立全面抗战路线。', historicalContext: '1937年8月，中共中央在洛川召开政治局扩大会议，确立了全面抗战路线，决定实行独立自主的山地游击战方针。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Luchuan%20Conference%201937%20Communist%20Party%20meeting%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Luchuan%20Conference%201937%20Communist%20Party%20meeting%20historical%20photo&image_size=landscape_4_3', caption: '洛川会议', isCover: true }], sortOrder: 17 },
-  { date: '1937年9月', dateSort: '1937-09-01', year: 1937, eraId: 'yanan', title: '平型关大捷', description: '八路军115师在平型关取得抗战以来第一次重大胜利。', historicalContext: '1937年9月25日，八路军第115师在平型关伏击日军，取得了全面抗战以来中国军队的第一次重大胜利。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Pingxingguan%20battle%201937%20Eighth%20Route%20Army%20victory%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Pingxingguan%20battle%201937%20Eighth%20Route%20Army%20victory%20historical%20photo&image_size=landscape_4_3', caption: '平型关大捷', isCover: true }], sortOrder: 18, isFeatured: true },
-  { date: '1938年5月', dateSort: '1938-05-01', year: 1938, eraId: 'yanan', title: '发表《论持久战》', description: '毛泽东发表《论持久战》，系统阐述了抗日战争的战略方针。', historicalContext: '1938年5月，毛泽东发表《论持久战》，科学地预测了抗日战争的发展进程，阐明了持久战的战略方针。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20On%20Protracted%20War%201938%20Yan%27an%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20On%20Protracted%20War%201938%20Yan%27an%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东在延安发表《论持久战》', isCover: true }], sortOrder: 19, isFeatured: true },
-  { date: '1939年10月', dateSort: '1939-10-01', year: 1939, eraId: 'yanan', title: '发表《<共产党人>发刊词》', description: '毛泽东发表《<共产党人>发刊词》，提出党的建设伟大工程。', historicalContext: '1939年10月，毛泽东为《共产党人》杂志撰写发刊词，总结了中国革命的经验，提出了党的建设伟大工程。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20Communist%20Party%20journal%201939%20Yan%27an%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20Communist%20Party%20journal%201939%20Yan%27an%20historical%20photo&image_size=landscape_4_3', caption: '《共产党人》杂志创刊', isCover: true }], sortOrder: 20 },
-  { date: '1940年1月', dateSort: '1940-01-01', year: 1940, eraId: 'yanan', title: '发表《新民主主义论》', description: '毛泽东发表《新民主主义论》，系统阐述了新民主主义革命理论。', historicalContext: '1940年1月，毛泽东发表《新民主主义论》，系统阐述了新民主主义革命的理论和纲领。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20New%20Democracy%201940%20Yan%27an%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20New%20Democracy%201940%20Yan%27an%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东在延安撰写《新民主主义论》', isCover: true }], sortOrder: 21, isFeatured: true },
-  { date: '1940年8月', dateSort: '1940-08-01', year: 1940, eraId: 'yanan', title: '百团大战', description: '八路军发动百团大战，沉重打击了日军的嚣张气焰。', historicalContext: '1940年8月至12月，八路军在华北地区发动了大规模的进攻战役，史称"百团大战"。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Hundred%20Regiments%20Offensive%201940%20Eighth%20Route%20Army%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Hundred%20Regiments%20Offensive%201940%20Eighth%20Route%20Army%20historical%20photo&image_size=landscape_4_3', caption: '百团大战', isCover: true }], sortOrder: 22, isFeatured: true },
-  { date: '1941年5月', dateSort: '1941-05-01', year: 1941, eraId: 'yanan', title: '延安整风运动开始', description: '毛泽东在延安干部会议上作《改造我们的学习》报告，整风运动开始。', historicalContext: '1941年5月，毛泽东在延安干部会议上作《改造我们的学习》报告，标志着延安整风运动的开始。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Yan%27an%20rectification%20movement%201941%20Mao%20Zedong%20speech%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Yan%27an%20rectification%20movement%201941%20Mao%20Zedong%20speech%20historical%20photo&image_size=landscape_4_3', caption: '延安整风运动', isCover: true }], sortOrder: 23 },
-  { date: '1942年2月', dateSort: '1942-02-01', year: 1942, eraId: 'yanan', title: '发表《整顿党的作风》', description: '毛泽东发表《整顿党的作风》，全面阐述了整风运动的指导思想。', historicalContext: '1942年2月1日，毛泽东在中共中央党校开学典礼上作《整顿党的作风》报告。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20rectify%20party%20style%201942%20Yan%27an%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20rectify%20party%20style%201942%20Yan%27an%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东在党校作报告', isCover: true }], sortOrder: 24 },
-  { date: '1943年3月', dateSort: '1943-03-01', year: 1943, eraId: 'yanan', title: '当选中共中央主席', description: '中共中央政治局会议选举毛泽东为中共中央主席、中央政治局主席、中央书记处主席。', historicalContext: '1943年3月，中共中央政治局会议选举毛泽东为中共中央主席、中央政治局主席、中央书记处主席。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20CCP%20Chairman%201943%20Yan%27an%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20CCP%20Chairman%201943%20Yan%27an%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东当选中共中央主席', isCover: true }], sortOrder: 25, isFeatured: true },
-  { date: '1944年5月', dateSort: '1944-05-01', year: 1944, eraId: 'yanan', title: '中共六届七中全会召开', description: '中共六届七中全会召开，通过《关于若干历史问题的决议》。', historicalContext: '1944年5月至1945年4月，中共六届七中全会在延安召开，通过了《关于若干历史问题的决议》。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%206th%20Plenum%201944%20Yan%27an%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%206th%20Plenum%201944%20Yan%27an%20historical%20photo&image_size=landscape_4_3', caption: '中共六届七中全会', isCover: true }], sortOrder: 26 },
-  { date: '1945年4月', dateSort: '1945-04-01', year: 1945, eraId: 'yanan', title: '中共七大召开', description: '中国共产党第七次全国代表大会在延安召开，确立毛泽东思想为党的指导思想。', historicalContext: '1945年4月至6月，中共七大在延安召开，确立毛泽东思想为党的指导思想并写入党章。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%207th%20Congress%201945%20Yan%27an%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%207th%20Congress%201945%20Yan%27an%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '中共七大会议场景', isCover: true }], sortOrder: 27, isFeatured: true },
-  { date: '1945年8月', dateSort: '1945-08-01', year: 1945, eraId: 'yanan', title: '抗日战争胜利', description: '日本宣布无条件投降，中国抗日战争取得伟大胜利。', historicalContext: '1945年8月15日，日本宣布无条件投降，中国人民经过八年艰苦抗战，终于取得了伟大胜利。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Japan%20surrender%201945%20WWII%20victory%20China%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Japan%20surrender%201945%20WWII%20victory%20China%20historical%20photo&image_size=landscape_4_3', caption: '抗日战争胜利', isCover: true }], sortOrder: 28, isFeatured: true },
-  { date: '1945年8月', dateSort: '1945-08-28', year: 1945, eraId: 'liberation', title: '重庆谈判', description: '毛泽东赴重庆与国民党进行和平谈判。', historicalContext: '1945年8月28日，毛泽东应蒋介石邀请赴重庆谈判，双方签署《双十协定》。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chongqing%20negotiation%201945%20Mao%20Zedong%20Jiang%20Jieshi%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chongqing%20negotiation%201945%20Mao%20Zedong%20Jiang%20Jieshi%20historical%20photo&image_size=landscape_4_3', caption: '重庆谈判期间毛泽东与蒋介石合影', isCover: true }], sortOrder: 29, isFeatured: true },
-  { date: '1946年6月', dateSort: '1946-06-01', year: 1946, eraId: 'liberation', title: '全面内战爆发', description: '国民党发动全面内战，人民解放军开始进行自卫反击。', historicalContext: '1946年6月26日，国民党军队大举进攻中原解放区，全面内战爆发。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Civil%20War%201946%20Nationalist%20attack%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Chinese%20Civil%20War%201946%20Nationalist%20attack%20historical%20photo&image_size=landscape_4_3', caption: '全面内战爆发', isCover: true }], sortOrder: 30 },
-  { date: '1947年3月', dateSort: '1947-03-01', year: 1947, eraId: 'liberation', title: '转战陕北', description: '毛泽东率领中共中央机关转战陕北，指挥全国解放战争。', historicalContext: '1947年3月，国民党军队进攻延安，毛泽东率领中共中央机关主动撤离延安，开始了艰苦的转战陕北。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20Shanbei%20campaign%201947%20revolutionary%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20Shanbei%20campaign%201947%20revolutionary%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东转战陕北', isCover: true }], sortOrder: 31, isFeatured: true },
-  { date: '1947年7月', dateSort: '1947-07-01', year: 1947, eraId: 'liberation', title: '转入战略进攻', description: '人民解放军转入战略进攻，刘邓大军挺进大别山。', historicalContext: '1947年7月至9月，人民解放军由战略防御转入战略进攻，刘邓大军千里跃进大别山。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Dabie%20Mountains%20campaign%201947%20Liu%20Deng%20Army%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Dabie%20Mountains%20campaign%201947%20Liu%20Deng%20Army%20historical%20photo&image_size=landscape_4_3', caption: '刘邓大军挺进大别山', isCover: true }], sortOrder: 32, isFeatured: true },
-  { date: '1948年9月', dateSort: '1948-09-01', year: 1948, eraId: 'liberation', title: '辽沈战役', description: '辽沈战役开始，这是三大战役的第一个战役。', historicalContext: '1948年9月12日至11月2日，辽沈战役在东北战场展开，解放了东北全境。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Liaoshen%20campaign%201948%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Liaoshen%20campaign%201948%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', caption: '辽沈战役', isCover: true }], sortOrder: 33, isFeatured: true },
-  { date: '1948年11月', dateSort: '1948-11-01', year: 1948, eraId: 'liberation', title: '淮海战役', description: '淮海战役开始，这是三大战役中规模最大的战役。', historicalContext: '1948年11月6日至1949年1月10日，淮海战役在华东、中原地区展开。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Huaihai%20campaign%201948%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Huaihai%20campaign%201948%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', caption: '淮海战役', isCover: true }], sortOrder: 34, isFeatured: true },
-  { date: '1948年11月', dateSort: '1948-11-29', year: 1948, eraId: 'liberation', title: '平津战役', description: '平津战役开始，这是三大战役的最后一个战役。', historicalContext: '1948年11月29日至1949年1月31日，平津战役在华北地区展开，解放了北平、天津等重要城市。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Pingjin%20campaign%201948%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Pingjin%20campaign%201948%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', caption: '平津战役', isCover: true }], sortOrder: 35, isFeatured: true },
-  { date: '1949年3月', dateSort: '1949-03-01', year: 1949, eraId: 'liberation', title: '中共七届二中全会', description: '中共七届二中全会在西柏坡召开，决定党的工作重心由农村转移到城市。', historicalContext: '1949年3月5日至13日，中共七届二中全会在西柏坡召开，提出了"两个务必"的重要思想。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%207th%20Plenum%201949%20Xibaipo%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%207th%20Plenum%201949%20Xibaipo%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '中共七届二中全会', isCover: true }], sortOrder: 36, isFeatured: true },
-  { date: '1949年4月', dateSort: '1949-04-01', year: 1949, eraId: 'liberation', title: '渡江战役', description: '人民解放军发起渡江战役，解放南京，推翻国民党统治。', historicalContext: '1949年4月21日，人民解放军发起渡江战役，4月23日南京解放，国民党政府仓皇南逃。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Crossing%20Yangtze%20River%201949%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Crossing%20Yangtze%20River%201949%20PLA%20victory%20historical%20photo&image_size=landscape_4_3', caption: '渡江战役', isCover: true }], sortOrder: 37, isFeatured: true },
-  { date: '1949年10月', dateSort: '1949-10-01', year: 1949, eraId: 'liberation', title: '中华人民共和国成立', description: '中华人民共和国开国大典在北京天安门广场举行，毛泽东宣告新中国成立。', historicalContext: '1949年10月1日，中华人民共和国开国大典在北京天安门广场隆重举行，毛泽东宣告新中国成立。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=PRC%20founding%20ceremony%201949%20Tiananmen%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=PRC%20founding%20ceremony%201949%20Tiananmen%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '1949年10月1日开国大典', isCover: true }], sortOrder: 38, isFeatured: true },
-  { date: '1950年6月', dateSort: '1950-06-01', year: 1950, eraId: 'founding', title: '土地改革运动', description: '中央人民政府颁布《中华人民共和国土地改革法》，全国开展土地改革运动。', historicalContext: '1950年6月30日，中央人民政府颁布《中华人民共和国土地改革法》，在全国范围内开展土地改革运动。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Land%20reform%201950%20China%20peasants%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Land%20reform%201950%20China%20peasants%20historical%20photo&image_size=landscape_4_3', caption: '土地改革运动', isCover: true }], sortOrder: 39 },
-  { date: '1950年10月', dateSort: '1950-10-01', year: 1950, eraId: 'founding', title: '抗美援朝战争', description: '中国人民志愿军跨过鸭绿江，开始抗美援朝战争。', historicalContext: '1950年10月19日，中国人民志愿军在彭德怀司令员率领下跨过鸭绿江，开始了抗美援朝战争。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Korean%20War%201950%20Chinese%20Volunteers%20cross%20Yalu%20River%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Korean%20War%201950%20Chinese%20Volunteers%20cross%20Yalu%20River%20historical%20photo&image_size=landscape_4_3', caption: '中国人民志愿军跨过鸭绿江', isCover: true }], sortOrder: 40, isFeatured: true },
-  { date: '1951年5月', dateSort: '1951-05-01', year: 1951, eraId: 'founding', title: '西藏和平解放', description: '西藏和平解放，标志着中国大陆全部解放。', historicalContext: '1951年5月23日，中央人民政府和西藏地方政府签订《十七条协议》，西藏和平解放。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Tibet%20peaceful%20liberation%201951%20Chinese%20Army%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Tibet%20peaceful%20liberation%201951%20Chinese%20Army%20historical%20photo&image_size=landscape_4_3', caption: '西藏和平解放', isCover: true }], sortOrder: 41, isFeatured: true },
-  { date: '1954年9月', dateSort: '1954-09-01', year: 1954, eraId: 'founding', title: '第一届全国人大召开', description: '第一届全国人民代表大会第一次会议召开，通过《中华人民共和国宪法》。', historicalContext: '1954年9月，第一届全国人民代表大会第一次会议在北京召开，通过了新中国第一部宪法。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=First%20National%20People%27s%20Congress%201954%20Beijing%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=First%20National%20People%27s%20Congress%201954%20Beijing%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '第一届全国人民代表大会', isCover: true }], sortOrder: 42, isFeatured: true },
-  { date: '1956年4月', dateSort: '1956-04-01', year: 1956, eraId: 'founding', title: '发表《论十大关系》', description: '毛泽东发表《论十大关系》，探索适合中国国情的社会主义建设道路。', historicalContext: '1956年4月，毛泽东发表《论十大关系》，总结了我国社会主义建设的经验，提出了探索适合中国国情的社会主义建设道路的任务。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20Ten%20Relations%201956%20socialist%20construction%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20Ten%20Relations%201956%20socialist%20construction%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东在中共中央政治局扩大会议上讲话', isCover: true }], sortOrder: 43 },
-  { date: '1956年9月', dateSort: '1956-09-01', year: 1956, eraId: 'founding', title: '中共八大召开', description: '中国共产党第八次全国代表大会召开，确立社会主义建设的方针。', historicalContext: '1956年9月，中共八大在北京召开，正确分析了国内主要矛盾的变化，确立了集中力量发展生产力的方针。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%208th%20Congress%201956%20Beijing%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%208th%20Congress%201956%20Beijing%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '中共八大会议场景', isCover: true }], sortOrder: 44, isFeatured: true },
-  { date: '1957年2月', dateSort: '1957-02-01', year: 1957, eraId: 'founding', title: '发表《关于正确处理人民内部矛盾的问题》', description: '毛泽东发表《关于正确处理人民内部矛盾的问题》，阐述社会主义社会矛盾学说。', historicalContext: '1957年2月，毛泽东在最高国务会议上发表《关于正确处理人民内部矛盾的问题》的讲话，系统阐述了社会主义社会的矛盾学说。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20people%27s%20contradictions%201957%20speech%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20people%27s%20contradictions%201957%20speech%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东在最高国务会议上讲话', isCover: true }], sortOrder: 45 },
-  { date: '1958年5月', dateSort: '1958-05-01', year: 1958, eraId: 'founding', title: '中共八大二次会议', description: '中共八大二次会议召开，提出"鼓足干劲、力争上游、多快好省地建设社会主义"的总路线。', historicalContext: '1958年5月，中共八大二次会议在北京召开，正式提出了"鼓足干劲、力争上游、多快好省地建设社会主义"的总路线。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%208th%20Congress%202nd%20session%201958%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%208th%20Congress%202nd%20session%201958%20Mao%20Zedong%20historical%20photo&image_size=landscape_4_3', caption: '中共八大二次会议', isCover: true }], sortOrder: 46 },
-  { date: '1959年4月', dateSort: '1959-04-01', year: 1959, eraId: 'founding', title: '第二届全国人大召开', description: '第二届全国人民代表大会第一次会议召开，毛泽东当选中华人民共和国主席。', historicalContext: '1959年4月，第二届全国人民代表大会第一次会议在北京召开，毛泽东当选为中华人民共和国主席。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Second%20National%20People%27s%20Congress%201959%20Mao%20Zedong%20chairman%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Second%20National%20People%27s%20Congress%201959%20Mao%20Zedong%20chairman%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东当选中华人民共和国主席', isCover: true }], sortOrder: 47 },
-  { date: '1960年3月', dateSort: '1960-03-01', year: 1960, eraId: 'construction', title: '视察广东农村', description: '毛泽东视察广东农村，了解人民公社情况。', historicalContext: '1960年3月，毛泽东到广东视察，深入了解农村人民公社的情况，关注农业生产和农民生活。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20visit%20Guangdong%20rural%201960%20peasants%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Mao%20Zedong%20visit%20Guangdong%20rural%201960%20peasants%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东视察广东农村', isCover: true }], sortOrder: 48 },
-  { date: '1961年1月', dateSort: '1961-01-01', year: 1961, eraId: 'construction', title: '中共八届九中全会', description: '中共八届九中全会召开，决定对国民经济实行"调整、巩固、充实、提高"的方针。', historicalContext: '1961年1月，中共八届九中全会在北京召开，正式批准对国民经济实行"八字方针"，标志着党和国家的工作转入调整阶段。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%208th%20Plenum%201961%20economic%20adjustment%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=CCP%208th%20Plenum%201961%20economic%20adjustment%20historical%20photo&image_size=landscape_4_3', caption: '中共八届九中全会', isCover: true }], sortOrder: 49 },
-  { date: '1962年1月', dateSort: '1962-01-01', year: 1962, eraId: 'construction', title: '七千人大会', description: '中共中央召开扩大的工作会议（七千人大会），总结经验教训。', historicalContext: '1962年1月至2月，中共中央召开扩大的工作会议，毛泽东作了自我批评，强调要发扬民主，加强集中统一。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Seven%20Thousand%20Conference%201962%20Mao%20Zedong%20speech%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Seven%20Thousand%20Conference%201962%20Mao%20Zedong%20speech%20historical%20photo&image_size=landscape_4_3', caption: '七千人大会', isCover: true }], sortOrder: 50, isFeatured: true },
-  { date: '1963年3月', dateSort: '1963-03-01', year: 1963, eraId: 'construction', title: '发出"向雷锋同志学习"号召', description: '毛泽东发出"向雷锋同志学习"的号召，全国掀起学习雷锋的热潮。', historicalContext: '1963年3月5日，毛泽东为雷锋同志题词"向雷锋同志学习"，全国迅速掀起了学习雷锋的热潮。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Learn%20from%20Lei%20Feng%201963%20Mao%20Zedong%20calligraphy%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Learn%20from%20Lei%20Feng%201963%20Mao%20Zedong%20calligraphy%20historical%20photo&image_size=landscape_4_3', caption: '毛泽东为雷锋同志题词', isCover: true }], sortOrder: 51, isFeatured: true },
-  { date: '1964年10月', dateSort: '1964-10-01', year: 1964, eraId: 'construction', title: '第一颗原子弹爆炸成功', description: '中国第一颗原子弹在新疆罗布泊爆炸成功，成为世界第五个拥有核武器的国家。', historicalContext: '1964年10月16日，中国第一颗原子弹爆炸成功，打破了超级大国的核垄断，提高了中国的国际地位。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=China%20first%20atomic%20bomb%201964%20nuclear%20test%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=China%20first%20atomic%20bomb%201964%20nuclear%20test%20historical%20photo&image_size=landscape_4_3', caption: '中国第一颗原子弹爆炸成功', isCover: true }], sortOrder: 52, isFeatured: true },
-  { date: '1965年1月', dateSort: '1965-01-01', year: 1965, eraId: 'construction', title: '第三届全国人大召开', description: '第三届全国人民代表大会第一次会议召开，提出"四个现代化"目标。', historicalContext: '1965年1月，第三届全国人民代表大会第一次会议在北京召开，周恩来在《政府工作报告》中提出了实现"四个现代化"的宏伟目标。', thumbnailUrl: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Third%20National%20People%27s%20Congress%201965%20four%20modernizations%20historical%20photo&image_size=landscape_4_3', photos: [{ url: 'https://neeko-copilot.bytedance.net/api/text2image?prompt=Third%20National%20People%27s%20Congress%201965%20four%20modernizations%20historical%20photo&image_size=landscape_4_3', caption: '第三届全国人民代表大会', isCover: true }], sortOrder: 53 },
-];
+interface TimelineData {
+  nodes: TimelineNode[];
+}
+
+function parseDate(dateStr: string): { year: number; dateSort: Date } {
+  const yearMatch = dateStr.match(/(\d{4})年/);
+  const year = yearMatch ? parseInt(yearMatch[1]) : 1900;
+  
+  const monthMatch = dateStr.match(/年(\d{1,2})月/);
+  const month = monthMatch ? parseInt(monthMatch[1]) - 1 : 0;
+  
+  const dayMatch = dateStr.match(/月(\d{1,2})日/);
+  const day = dayMatch ? parseInt(dayMatch[1]) : 1;
+  
+  const dateSort = new Date(year, month, day);
+  
+  return { year, dateSort };
+}
+
+function generateTitle(description: string): string {
+  const maxLength = 80;
+  if (description.length <= maxLength) {
+    return description;
+  }
+  return description.substring(0, maxLength) + '...';
+}
 
 async function main() {
   console.log('开始导入时间线数据...');
-  console.log(`共 ${timelineData.length} 个时间线节点`);
-
-  for (let i = 0; i < timelineData.length; i++) {
-    const nodeData = timelineData[i];
+  
+  const dataPath = path.join(__dirname, '../mao-memorial-data/data/timeline_data.json');
+  const nameMapPath = path.join(__dirname, '../scripts/image-name-map.json');
+  
+  const data: TimelineData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+  const nameMap: Record<string, string> = JSON.parse(fs.readFileSync(nameMapPath, 'utf-8'));
+  
+  console.log(`共 ${data.nodes.length} 个时间线节点`);
+  
+  for (let i = 0; i < data.nodes.length; i++) {
+    const node = data.nodes[i];
+    const { year, dateSort } = parseDate(node.date);
+    const title = generateTitle(node.description);
     
     try {
-      const node = await prisma.timelineNode.create({
+      const timelineNode = await prisma.timelineNode.create({
         data: {
-          date: nodeData.date,
-          dateSort: nodeData.dateSort,
-          year: nodeData.year,
-          eraId: nodeData.eraId,
-          title: nodeData.title,
-          description: nodeData.description,
-          historicalContext: nodeData.historicalContext,
-          thumbnailUrl: nodeData.photos[0].url,
-          photoCount: nodeData.photos.length,
-          sortOrder: nodeData.sortOrder,
+          date: node.date,
+          dateSort: dateSort,
+          year: year,
+          eraId: node.era,
+          title: title,
+          description: node.description,
+          thumbnailUrl: `/timeline/${nameMap[node.images[0].filename]}`,
+          photoCount: node.images.length,
+          sortOrder: node.sort_order,
           isPublished: true,
-          isFeatured: nodeData.isFeatured || false,
+          isFeatured: false,
         },
       });
-
-      for (let j = 0; j < nodeData.photos.length; j++) {
-        const photoData = nodeData.photos[j];
+      
+      for (let j = 0; j < node.images.length; j++) {
+        const image = node.images[j];
+        const newFileName = nameMap[image.filename];
+        
         await prisma.photo.create({
           data: {
-            nodeId: node.id,
-            url: photoData.url,
-            thumbnailUrl: photoData.url,
-            caption: photoData.caption,
-            isCover: photoData.isCover,
+            nodeId: timelineNode.id,
+            url: `/timeline/${newFileName}`,
+            thumbnailUrl: `/timeline/${newFileName}`,
+            caption: node.description,
+            isCover: j === 0,
             sortOrder: j,
           },
         });
       }
-
+      
       if ((i + 1) % 10 === 0) {
         console.log(`✓ 已导入 ${i + 1} 个节点`);
       }
     } catch (error) {
-      console.error(`✗ 导入节点 "${nodeData.title}" 失败:`, error);
+      console.error(`✗ 导入节点 "${node.date}" 失败:`, error);
     }
   }
-
+  
   await prisma.$disconnect();
   console.log('\n✅ 时间线数据导入完成！');
 }

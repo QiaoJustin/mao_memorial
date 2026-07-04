@@ -132,7 +132,7 @@ export async function POST(request: Request) {
       nickname: nickname.trim() || '匿名网友',
       content: filterResult.filtered,
       ipAddress: ip,
-      status: filterResult.hasSensitive ? 'pending' : 'approved',
+      status: 'pending',
     },
   });
 

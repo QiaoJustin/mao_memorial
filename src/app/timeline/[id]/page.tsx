@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps, parent: ResolvingM
   let description = '毛泽东主席生平中的重要时间节点';
 
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/timeline/${id}`);
+    const res = await fetch(`/api/v1/timeline/${id}`);
     const data = await res.json();
     if (data.data) {
       title = data.data.title;
@@ -82,7 +82,7 @@ interface PageProps {
 
 async function fetchNode(id: number): Promise<TimelineNode | null> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/timeline/${id}`);
+    const res = await fetch(`/api/v1/timeline/${id}`);
     const data = await res.json();
     return data.data || null;
   } catch {
@@ -92,7 +92,7 @@ async function fetchNode(id: number): Promise<TimelineNode | null> {
 
 async function fetchAdjacent(id: number): Promise<{ prev: AdjacentNode | null; next: AdjacentNode | null }> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/timeline/${id}/adjacent`);
+    const res = await fetch(`/api/v1/timeline/${id}/adjacent`);
     const data = await res.json();
     return data.data || { prev: null, next: null };
   } catch {
@@ -102,7 +102,7 @@ async function fetchAdjacent(id: number): Promise<{ prev: AdjacentNode | null; n
 
 async function recordView(id: number) {
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/timeline/${id}/view`, {
+    await fetch(`/api/v1/timeline/${id}/view`, {
       method: 'POST',
     });
   } catch {}

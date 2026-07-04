@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, User, Bell } from 'lucide-react';
 
 interface AdminHeaderProps {
@@ -9,21 +9,28 @@ interface AdminHeaderProps {
   breadcrumbs?: { label: string; href?: string }[];
 }
 
+interface UserInfo {
+  name: string;
+  role: string;
+}
+
 export default function AdminHeader({ onMenuToggle, title, breadcrumbs }: AdminHeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [user, setUser] = useState<UserInfo>({ name: '未知用户', role: 'editor' });
 
-  const getUserInfo = () => {
+  useEffect(() => {
     const token = localStorage.getItem('admin-token');
-    if (!token) return { name: '未知用户', role: 'editor' };
+    if (!token) {
+      setUser({ name: '未知用户', role: 'editor' });
+      return;
+    }
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return { name: payload.username || '未知用户', role: payload.role || 'editor' };
+      setUser({ name: payload.username || '未知用户', role: payload.role || 'editor' });
     } catch {
-      return { name: '未知用户', role: 'editor' };
+      setUser({ name: '未知用户', role: 'editor' });
     }
-  };
-
-  const user = getUserInfo();
+  }, []);
 
   return (
     <header className="h-16 bg-surface border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">

@@ -57,20 +57,27 @@ export async function GET(request: Request) {
 
   const eraData = eraDistribution.map((e) => ({
     era: eraMap.get(e.eraId) || e.eraId,
-    count: e._count.id,
+    count: Number(e._count.id),
+  }));
+
+  const hotNodesData = hotNodes.map((node) => ({
+    id: Number(node.id),
+    title: node.title,
+    viewCount: Number(node.viewCount),
+    date: node.date,
   }));
 
   return NextResponse.json({
     code: 200,
     data: {
       overview: {
-        totalNodes,
-        totalPhotos,
-        totalMessages,
-        pendingMessages,
+        totalNodes: Number(totalNodes),
+        totalPhotos: Number(totalPhotos),
+        totalMessages: Number(totalMessages),
+        pendingMessages: Number(pendingMessages),
       },
-      timeline: timelineData,
-      hotNodes,
+      timeline: timelineData.map((t) => ({ ...t, count: Number(t.count) })),
+      hotNodes: hotNodesData,
       eraDistribution: eraData,
     },
   });

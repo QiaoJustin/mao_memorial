@@ -44,7 +44,14 @@ export function useInfiniteTimeline(options: UseInfiniteTimelineOptions = {}) {
     async (url) => {
       const res = await fetch(url);
       const data = await res.json();
-      return data.data || { list: [], total: 0, totalPages: 0 };
+      const responseData = data.data || { items: [], total: 0, totalPages: 0 };
+      return {
+        ...responseData,
+        items: (responseData.items || []).map((item: any) => ({
+          ...item,
+          photoUrl: item.thumbnailUrl || item.photoUrl,
+        })),
+      };
     },
     { revalidateOnFocus: false }
   );
@@ -78,7 +85,14 @@ export function useInfiniteTimeline(options: UseInfiniteTimelineOptions = {}) {
       const url = getKey(currentPage + 1);
       const res = await fetch(url);
       const response = await res.json();
-      const newData: TimelineResponse = response.data || { items: [], total: 0, totalPages: 0 };
+      const responseData = response.data || { items: [], total: 0, totalPages: 0 };
+      const newData: TimelineResponse = {
+        ...responseData,
+        items: (responseData.items || []).map((item: any) => ({
+          ...item,
+          photoUrl: item.thumbnailUrl || item.photoUrl,
+        })),
+      };
 
       setPages((prev) => [...prev, newData.items]);
     } catch (err) {

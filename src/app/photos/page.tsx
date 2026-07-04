@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PhotoCard from '@/components/PhotoCard';
@@ -25,16 +25,16 @@ interface Photo {
 }
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     era?: string;
     year?: string;
     page?: string;
-  };
+  }>;
 }
 
 async function fetchEras(): Promise<Era[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/eras`, { cache: 'force-cache' });
+    const res = await fetch('/api/v1/eras', { cache: 'force-cache' });
     const data = await res.json();
     return data.data || [];
   } catch {
@@ -48,22 +48,28 @@ async function fetchPhotos(
   page: number = 1
 ): Promise<{ list: Photo[]; total: number; totalPages: number }> {
   try {
-    let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/photos?page=${page}&pageSize=16`;
+    let url = `/api/v1/photos?page=${page}&pageSize=16`;
     if (era) url += `&era=${encodeURIComponent(era)}`;
     if (year) url += `&year=${year}`;
     
     const res = await fetch(url, { cache: 'force-cache' });
     const data = await res.json();
-    return data.data || { list: [], total: 0, totalPages: 0 };
+    const responseData = data.data || { items: [], total: 0, totalPages: 0 };
+    return {
+      list: responseData.items || [],
+      total: responseData.total || 0,
+      totalPages: responseData.totalPages || 0,
+    };
   } catch {
     return { list: [], total: 0, totalPages: 0 };
   }
 }
 
 export default function PhotosPage({ searchParams }: PageProps) {
-  const era = searchParams.era;
-  const year = searchParams.year ? parseInt(searchParams.year, 10) : undefined;
-  const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
+  const resolvedParams = use(searchParams);
+  const era = resolvedParams.era;
+  const year = resolvedParams.year ? parseInt(resolvedParams.year, 10) : undefined;
+  const page = resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1;
 
   const [eras, setEras] = useState<Era[]>([]);
   const [photosData, setPhotosData] = useState<{ list: Photo[]; total: number; totalPages: number }>({ list: [], total: 0, totalPages: 0 });

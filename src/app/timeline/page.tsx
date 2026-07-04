@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, use } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TimelineContainer from '@/components/timeline/TimelineContainer';
@@ -19,9 +19,9 @@ interface Era {
 }
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     era?: string;
-  };
+  }>;
 }
 
 export default function TimelinePage({ searchParams }: PageProps) {
@@ -31,11 +31,13 @@ export default function TimelinePage({ searchParams }: PageProps) {
   const [currentYear, setCurrentYear] = useState(1918);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  const resolvedSearchParams = use(searchParams);
+
   useEffect(() => {
-    if (searchParams.era) {
-      setSelectedEra(searchParams.era);
+    if (resolvedSearchParams.era) {
+      setSelectedEra(resolvedSearchParams.era);
     }
-  }, [searchParams.era, setSelectedEra]);
+  }, [resolvedSearchParams.era, setSelectedEra]);
 
   useEffect(() => {
     async function fetchErasData() {

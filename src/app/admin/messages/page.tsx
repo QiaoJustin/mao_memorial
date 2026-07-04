@@ -90,11 +90,16 @@ export default function MessagesPage() {
         },
         body: JSON.stringify({ rejectReason: rejectModal.reason }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.code === 200) {
         setRejectModal(null);
         fetchMessages();
+      } else {
+        alert(data.message || '拒绝操作失败');
       }
-    } catch {}
+    } catch (error) {
+      alert('拒绝操作失败，请重试');
+    }
   };
 
   const handlePin = async (id: number, isPinned: boolean) => {

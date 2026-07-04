@@ -52,7 +52,7 @@ interface HotSearch {
 
 async function fetchEras(): Promise<Era[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/eras`, { cache: 'force-cache' });
+    const res = await fetch('/api/v1/eras', { cache: 'force-cache' });
     const data = await res.json();
     return data.data || [];
   } catch {
@@ -62,7 +62,7 @@ async function fetchEras(): Promise<Era[]> {
 
 async function fetchFeaturedNodes(): Promise<FeaturedNode[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/timeline/featured?limit=6`, { cache: 'force-cache' });
+    const res = await fetch('/api/v1/timeline/featured?limit=6', { cache: 'force-cache' });
     const data = await res.json();
     return data.data || [];
   } catch {
@@ -72,9 +72,10 @@ async function fetchFeaturedNodes(): Promise<FeaturedNode[]> {
 
 async function fetchFeaturedPhotos(): Promise<Photo[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/photos?page=1&pageSize=8`, { cache: 'force-cache' });
+    const res = await fetch('/api/v1/photos?page=1&pageSize=8', { cache: 'force-cache' });
     const data = await res.json();
-    return data.data?.list || [];
+    const responseData = data.data || { items: [], total: 0 };
+    return responseData.items || [];
   } catch {
     return [];
   }
@@ -82,9 +83,10 @@ async function fetchFeaturedPhotos(): Promise<Photo[]> {
 
 async function fetchLatestMessages(): Promise<Message[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/messages?page=1&pageSize=3`, { cache: 'force-cache' });
+    const res = await fetch('/api/v1/messages?page=1&pageSize=3', { cache: 'force-cache' });
     const data = await res.json();
-    return data.data?.list || [];
+    const responseData = data.data || { items: [], total: 0 };
+    return responseData.items || [];
   } catch {
     return [];
   }
@@ -92,7 +94,7 @@ async function fetchLatestMessages(): Promise<Message[]> {
 
 async function fetchHotSearch(): Promise<HotSearch[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/search/hot`, { cache: 'force-cache' });
+    const res = await fetch('/api/v1/search/hot', { cache: 'force-cache' });
     const data = await res.json();
     return data.data || [];
   } catch {

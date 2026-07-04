@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Plus, Search, Filter, Eye, Edit, Trash2, CheckCircle, XCircle, Star } from 'lucide-react';
 
@@ -19,6 +20,7 @@ interface Node {
 }
 
 export default function NodesPage() {
+  const router = useRouter();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -58,18 +60,31 @@ export default function NodesPage() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('admin-token');
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+      
       let url = `/api/v1/admin/nodes?page=${page}&pageSize=${pageSize}`;
       if (searchQuery) url += `&q=${encodeURIComponent(searchQuery)}`;
       if (selectedEra) url += `&eraId=${encodeURIComponent(selectedEra)}`;
       if (filterPublished) url += `&isPublished=${filterPublished}`;
 
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      
+      if (res.status === 401) {
+        localStorage.removeItem('admin-token');
+        router.push('/admin/login');
+        return;
+      }
+      
       const data = await res.json();
       if (data.code === 200) {
         setNodes(data.data.list);
         setTotal(data.data.total);
       }
-    } catch {
+    } catch (error) {
+      console.error('Fetch nodes error:', error);
       setNodes([]);
     } finally {
       setIsLoading(false);

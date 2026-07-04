@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -22,16 +22,17 @@ interface HotSearch {
 }
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     q?: string;
-  };
+  }>;
 }
 
 const SEARCH_HISTORY_KEY = 'mao-memorial-search-history';
 const MAX_HISTORY = 5;
 
 export default function SearchPage({ searchParams }: PageProps) {
-  const [query, setQuery] = useState(searchParams.q || '');
+  const resolvedParams = use(searchParams);
+  const [query, setQuery] = useState(resolvedParams.q || '');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);

@@ -82,7 +82,7 @@ export async function GET(request: Request) {
     return {
       id: Number(node.id),
       date: node.date,
-      dateSort: node.dateSort,
+      dateSort: node.dateSort.toISOString(),
       year: Number(node.year),
       eraId: node.eraId,
       eraName: node.era?.name || '',

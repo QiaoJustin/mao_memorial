@@ -33,7 +33,7 @@ export default function MessagesPage() {
       const data = await res.json();
 
       if (data.code === 200) {
-        const newMessages = data.data.list || [];
+        const newMessages = data.data.items || [];
         if (pageNum === 1) {
           setMessages(newMessages);
         } else {

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   LayoutDashboard,
@@ -30,10 +31,16 @@ const menuItems = [
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
-  const token = localStorage.getItem('admin-token');
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('admin-token');
+    setToken(storedToken);
+  }, []);
   
   const handleLogout = () => {
     localStorage.removeItem('admin-token');
+    setToken(null);
     window.location.href = '/admin/login';
   };
 

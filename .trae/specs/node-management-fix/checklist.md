@@ -1,0 +1,11 @@
+- [x] Checkpoint 1: `timeline_nodes` 表包含99条记录
+- [x] Checkpoint 2: `photos` 表包含100条记录
+- [x] Checkpoint 3: `/api/v1/admin/nodes` 接口返回200状态码
+- [x] Checkpoint 4: `/api/v1/admin/nodes` 返回数据无BigInt类型
+- [x] Checkpoint 5: 管理后台节点管理页面能正常显示数据
+- [x] Checkpoint 6: 无token时自动重定向到登录页
+- [x] Checkpoint 7: `/timeline` 页面图片能正常加载
+- [x] Checkpoint 8: `/photos` 页面图片能正常加载
+- [x] Checkpoint 9: 无 "localStorage is not defined" 错误
+- [x] Checkpoint 10: 所有主要页面返回200状态码
+- [x] Checkpoint 11: 所有API接口返回正确数据格式

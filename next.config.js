@@ -3,6 +3,9 @@ const nextConfig = {
   // 输出模式：生产环境使用 standalone（适配 Docker 部署）
   output: 'standalone',
 
+  // Turbopack 配置（Next.js 16 默认启用）
+  turbopack: {},
+
   // 图片优化配置：允许本地图片和外部 cctvpic.com 图片域名
   images: {
     remotePatterns: [

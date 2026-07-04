@@ -43,7 +43,7 @@ export default function MessageForm({ onSubmitSuccess }: MessageFormProps) {
       });
       const data = await res.json();
 
-      if (data.code === 200) {
+      if (data.code === 201) {
         setSubmitStatus('success');
         setFormData({ nickname: '', content: '' });
         onSubmitSuccess?.();

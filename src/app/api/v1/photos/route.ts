@@ -59,18 +59,23 @@ export async function GET(request: Request) {
     where.node = { ...where.node as Record<string, unknown>, year };
   }
 
+  const orderBy = sort === 'dateSort' 
+    ? { node: { dateSort: 'asc' } }
+    : { [sort]: 'asc' };
+
   const [photos, total] = await Promise.all([
     prisma.photo.findMany({
       where,
       skip,
       take: validPageSize,
-      orderBy: { [sort]: 'asc' },
+      orderBy,
       include: {
         node: {
           select: {
             title: true,
             date: true,
             eraId: true,
+            dateSort: true,
           },
         },
       },

@@ -31,11 +31,11 @@ export async function GET(request: Request) {
     where.eraId = eraId;
   }
   
-  if (isPublished !== undefined) {
+  if (isPublished !== null) {
     where.isPublished = isPublished === 'true';
   }
   
-  if (isFeatured !== undefined) {
+  if (isFeatured !== null) {
     where.isFeatured = isFeatured === 'true';
   }
 
@@ -56,18 +56,27 @@ export async function GET(request: Request) {
     year: Number(item.year),
     photoCount: Number(item.photoCount || 0),
     viewCount: Number(item.viewCount || 0),
+    likeCount: Number(item.likeCount || 0),
     sortOrder: Number(item.sortOrder),
     createdAt: item.createdAt.toISOString().replace('T', ' '),
     updatedAt: item.updatedAt.toISOString().replace('T', ' '),
-    photos: item.photos.map(p => ({ ...p, id: Number(p.id), sortOrder: Number(p.sortOrder) })),
+    photos: item.photos.map(p => ({
+      ...p,
+      id: Number(p.id),
+      nodeId: Number(p.nodeId),
+      sortOrder: Number(p.sortOrder),
+      width: p.width ? Number(p.width) : null,
+      height: p.height ? Number(p.height) : null,
+      fileSize: p.fileSize ? Number(p.fileSize) : null,
+    })),
   }));
 
   return NextResponse.json({
     code: 200,
     data: {
       list: formattedList,
-      total,
-      totalPages: Math.ceil(total / pageSize),
+      total: Number(total),
+      totalPages: Math.ceil(Number(total) / pageSize),
       page,
       pageSize,
     },
