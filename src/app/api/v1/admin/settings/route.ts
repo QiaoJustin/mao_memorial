@@ -1,24 +1,19 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeSetting } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'editor')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async () => {
   const settings = await prisma.setting.findMany({
     orderBy: { category: 'asc' },
   });
 
-  const grouped: Record<string, typeof settings> = {};
+  const grouped: Record<string, ReturnType<typeof serializeSetting>[]> = {};
   settings.forEach((s) => {
+    const serialized = serializeSetting(s as unknown as Record<string, unknown>);
     if (!grouped[s.category]) grouped[s.category] = [];
-    grouped[s.category].push(s);
+    grouped[s.category].push(serialized);
   });
 
   return NextResponse.json({ code: 200, data: grouped });
-}
+}, 'editor');

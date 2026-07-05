@@ -29,6 +29,7 @@
 /.env.local
 /.env.development.local
 /.env.test.local
+/.env.production
 /.env.production.local
 /.env.*.local
 
@@ -80,6 +81,11 @@ next-env.d.ts
 # Vercel
 # ============================================
 .vercel
+
+# ============================================
+# Trae IDE
+# ============================================
+.trae
 
 # ============================================
 # 备份文件

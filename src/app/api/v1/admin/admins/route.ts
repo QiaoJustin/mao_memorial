@@ -1,22 +1,28 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeAdmin } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-export async function GET(request: Request) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'super_admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+// P2-6: 创建管理员接口输入校验 schema
+const createAdminSchema = z.object({
+  username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_]+$/, '用户名仅支持字母、数字、下划线'),
+  password: z.string().min(8).max(128, '密码长度不能超过 128 字符'),
+  name: z.string().min(1).max(50),
+  email: z.string().email().optional(),
+  phone: z.string().max(20).optional(),
+  role: z.enum(['admin', 'editor']).optional(),
+  status: z.enum(['active', 'disabled']).optional(),
+});
 
+export const GET = withAuth(async (request) => {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') || '20', 10);
-  const q = searchParams.get('q');
+  const q = searchParams.get('q') || searchParams.get('keyword');
 
   const where: Record<string, unknown> = { isDeleted: false };
-  
+
   if (q) {
     where.OR = [
       { username: { contains: q as string } },
@@ -47,13 +53,9 @@ export async function GET(request: Request) {
     prisma.admin.count({ where }),
   ]);
 
-  const formattedList = list.map(item => ({
-    ...item,
-    id: Number(item.id),
-    loginCount: Number(item.loginCount || 0),
-    lastLoginAt: item.lastLoginAt?.toISOString().replace('T', ' ') || '',
-    createdAt: item.createdAt.toISOString().replace('T', ' '),
-  }));
+  const formattedList = list.map((item) =>
+    serializeAdmin(item as unknown as Record<string, unknown>)
+  );
 
   return NextResponse.json({
     code: 200,
@@ -65,33 +67,36 @@ export async function GET(request: Request) {
       pageSize,
     },
   });
-}
+}, 'super_admin');
 
-export async function POST(request: Request) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'super_admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withAuth(async (request) => {
   const body = await request.json();
+
+  // P2-6: zod 校验输入，失败返回 400
+  const parsed = createAdminSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { code: 400, message: '参数错误', data: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const data = parsed.data;
   const bcrypt = await import('bcryptjs');
-  
-  const existing = await prisma.admin.findUnique({ where: { username: body.username } });
+
+  const existing = await prisma.admin.findUnique({ where: { username: data.username } });
   if (existing) {
     return NextResponse.json({ code: 400, message: 'Username already exists' }, { status: 400 });
   }
 
   const admin = await prisma.admin.create({
     data: {
-      username: body.username,
-      passwordHash: await bcrypt.hash(body.password, 10),
-      name: body.name,
-      email: body.email,
-      phone: body.phone,
-      role: body.role || 'editor',
-      status: body.status || 'active',
+      username: data.username,
+      passwordHash: await bcrypt.hash(data.password, 10),
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      role: data.role || 'editor',
+      status: data.status || 'active',
     },
     select: {
       id: true,
@@ -105,11 +110,8 @@ export async function POST(request: Request) {
     },
   });
 
-  const formattedAdmin = {
-    ...admin,
-    id: Number(admin.id),
-    createdAt: admin.createdAt.toISOString().replace('T', ' '),
-  };
-
-  return NextResponse.json({ code: 200, data: formattedAdmin }, { status: 201 });
-}
+  return NextResponse.json(
+    { code: 200, data: serializeAdmin(admin as unknown as Record<string, unknown>) },
+    { status: 201 }
+  );
+}, 'super_admin');

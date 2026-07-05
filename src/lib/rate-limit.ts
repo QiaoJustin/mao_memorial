@@ -41,7 +41,9 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
       remaining,
       resetTime: Date.now() + (ttl > 0 ? ttl * 1000 : windowSeconds * 1000),
     };
-  } catch {
+  } catch (error) {
+    // P2-3: Redis 故障时降级为允许，避免全局不可用；记录告警便于排查
+    console.error('[rate-limit] Redis 故障，限流降级为允许:', error);
     return {
       allowed: true,
       remaining: limit,
@@ -58,15 +60,20 @@ export async function checkMessageRateLimit(ip: string): Promise<RateLimitResult
   });
 }
 
-export async function checkLoginRateLimit(username: string): Promise<RateLimitResult> {
+// P1-10: 登录 IP 限流，防止暴力破解
+// 修改：入参从 username 改为 ip（基于 IP 限流更有效，username 限流可被多账号绕过）
+export async function checkLoginRateLimit(ip: string): Promise<RateLimitResult> {
+  // 开发环境放宽限流限制
+  if (process.env.NODE_ENV === 'development') {
+    return checkRateLimit({
+      key: `rate:login:ip:${ip}`,
+      limit: 100,
+      windowSeconds: 60,
+    });
+  }
   return checkRateLimit({
-    key: `rate:login:${username}`,
+    key: `rate:login:ip:${ip}`,
     limit: 5,
     windowSeconds: 30 * 60,
   });
-}
-
-export async function consumeToken(key: string, limit: number, windowSeconds: number): Promise<boolean> {
-  const result = await checkRateLimit({ key, limit, windowSeconds });
-  return result.allowed;
 }

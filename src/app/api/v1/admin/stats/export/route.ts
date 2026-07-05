@@ -1,15 +1,9 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeAccessLog } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'super_admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async (request) => {
   const { searchParams } = new URL(request.url);
   const days = parseInt(searchParams.get('days') || '30', 10);
   const format = searchParams.get('format') || 'csv';
@@ -24,7 +18,7 @@ export async function GET(request: Request) {
   if (format === 'csv') {
     const headers = ['id', 'path', 'method', 'statusCode', 'ipAddress', 'userAgent', 'referer', 'createdAt'];
     const rows = logs.map((log) => [
-      log.id,
+      Number(log.id),
       `"${log.path}"`,
       log.method,
       log.statusCode,
@@ -44,5 +38,8 @@ export async function GET(request: Request) {
     });
   }
 
-  return NextResponse.json({ code: 200, data: logs });
-}
+  return NextResponse.json({
+    code: 200,
+    data: logs.map((log) => serializeAccessLog(log as unknown as Record<string, unknown>)),
+  });
+}, 'editor');

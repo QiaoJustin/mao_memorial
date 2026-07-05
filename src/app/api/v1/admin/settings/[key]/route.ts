@@ -1,34 +1,34 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeSetting } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function PUT(request: Request, { params }: { params: Promise<{ key: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+export const PUT = withAuth<{ params: Promise<{ key: string }> }>(
+  async (request, ctx) => {
+    const { key } = await ctx.params;
+    const body = await request.json();
 
-  const body = await request.json();
+    const setting = await prisma.setting.upsert({
+      where: { key },
+      update: {
+        value: body.value,
+        type: body.type || 'string',
+        category: body.category || 'general',
+        description: body.description,
+      },
+      create: {
+        key,
+        value: body.value,
+        type: body.type || 'string',
+        category: body.category || 'general',
+        description: body.description,
+      },
+    });
 
-  const setting = await prisma.setting.upsert({
-    where: { key: resolvedParams.key },
-    update: {
-      value: body.value,
-      type: body.type || 'string',
-      category: body.category || 'general',
-      description: body.description,
-    },
-    create: {
-      key: resolvedParams.key,
-      value: body.value,
-      type: body.type || 'string',
-      category: body.category || 'general',
-      description: body.description,
-    },
-  });
-
-  return NextResponse.json({ code: 200, data: setting });
-}
+    return NextResponse.json({
+      code: 200,
+      data: serializeSetting(setting as unknown as Record<string, unknown>),
+    });
+  },
+  'admin'
+);

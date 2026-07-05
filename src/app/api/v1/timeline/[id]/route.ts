@@ -31,7 +31,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     });
   }
 
-  const node = await prisma.timelineNode.findUnique({
+  const node = await prisma.timelineNode.findFirst({
     where: { id, isPublished: true },
     include: {
       era: { select: { name: true } },

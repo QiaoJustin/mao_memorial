@@ -1,112 +1,42 @@
-import { NextApiResponse } from 'next';
+import { NextResponse } from 'next/server';
 
-export interface ApiResponse<T = null> {
-  code: number;
-  message: string;
-  data: T;
-  errors?: Array<{ field: string; message: string }>;
-  timestamp: number;
-  requestId: string;
+/**
+ * App Router 兼容的统一响应工具
+ * 供后续 route 统一风格使用，现有 route 可逐步迁移
+ *
+ * P1-2: 重构自 Pages Router 风格（NextApiResponse）为 App Router 风格（NextResponse）
+ */
+
+// P1-2: 成功响应
+export function successResponse<T>(data: T, status: number = 200) {
+  return NextResponse.json({ code: 200, data }, { status });
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
-export function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-export function success<T = null>(
-  data: T,
-  message: string = 'success',
-  code: number = 200
-): ApiResponse<T> {
-  return {
-    code,
-    message,
-    data,
-    timestamp: Date.now(),
-    requestId: generateRequestId(),
-  };
-}
-
-export function created<T = null>(data: T, message: string = '创建成功'): ApiResponse<T> {
-  return success(data, message, 201);
-}
-
-export function error(
-  code: number,
+// P1-2: 错误响应（code 同时作为 HTTP status，可通过 status 参数覆盖）
+export function errorResponse(
   message: string,
-  errors?: Array<{ field: string; message: string }>
-): ApiResponse {
-  return {
-    code,
-    message,
-    data: null,
-    errors,
-    timestamp: Date.now(),
-    requestId: generateRequestId(),
-  };
+  code: number = 400,
+  status: number = code
+) {
+  return NextResponse.json({ code, message, data: null }, { status });
 }
 
-export function badRequest(message: string, errors?: Array<{ field: string; message: string }>): ApiResponse {
-  return error(400, message, errors);
-}
-
-export function unauthorized(message: string = '请先登录'): ApiResponse {
-  return error(401, message);
-}
-
-export function forbidden(message: string = '您没有权限执行此操作'): ApiResponse {
-  return error(403, message);
-}
-
-export function notFound(message: string = '请求的资源不存在'): ApiResponse {
-  return error(404, message);
-}
-
-export function conflict(message: string = '资源冲突'): ApiResponse {
-  return error(409, message);
-}
-
-export function unprocessable(message: string): ApiResponse {
-  return error(422, message);
-}
-
-export function tooManyRequests(message: string = '操作过于频繁，请稍后再试'): ApiResponse {
-  return error(429, message);
-}
-
-export function serverError(message: string = '服务器开小差了，请稍后重试'): ApiResponse {
-  return error(500, message);
-}
-
-export function sendResponse<T = null>(
-  res: NextApiResponse,
-  response: ApiResponse<T>
-): void {
-  res.status(response.code).json(response);
-}
-
-export function sendSuccess<T = null>(
-  res: NextApiResponse,
-  data: T,
-  message: string = 'success',
-  code: number = 200
-): void {
-  sendResponse(res, success(data, message, code));
-}
-
-export function sendError(
-  res: NextApiResponse,
-  code: number,
-  message: string,
-  errors?: Array<{ field: string; message: string }>
-): void {
-  sendResponse(res, error(code, message, errors));
+// P1-2: 分页响应（自动处理 BigInt → Number 转换，解决 Prisma count 序列化问题）
+export function paginatedResponse<T>(
+  list: T[],
+  total: number | bigint,
+  page: number,
+  pageSize: number
+) {
+  const totalNum = Number(total);
+  return NextResponse.json({
+    code: 200,
+    data: {
+      list,
+      total: totalNum,
+      totalPages: Math.ceil(totalNum / pageSize),
+      page,
+      pageSize,
+    },
+  });
 }

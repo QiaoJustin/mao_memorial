@@ -1,41 +1,49 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeMessage } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'editor')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+export const GET = withAuth<{ params: Promise<{ id: string }> }>(
+  async (request, ctx) => {
+    const { id } = await ctx.params;
 
-  const message = await prisma.message.findUnique({
-    where: { id: BigInt(resolvedParams.id), isDeleted: false },
-    include: { reviewer: { select: { id: true, name: true } } },
-  });
+    const message = await prisma.message.findUnique({
+      where: { id: BigInt(id), isDeleted: false },
+      include: { reviewer: { select: { id: true, name: true } } },
+    });
 
-  if (!message) {
-    return NextResponse.json({ code: 404, message: 'Message not found' }, { status: 404 });
-  }
+    if (!message) {
+      return NextResponse.json({ code: 404, message: 'Message not found' }, { status: 404 });
+    }
 
-  return NextResponse.json({ code: 200, data: message });
-}
+    return NextResponse.json({
+      code: 200,
+      data: serializeMessage(message as unknown as Record<string, unknown>),
+    });
+  },
+  'editor'
+);
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+export const DELETE = withAuth<{ params: Promise<{ id: string }> }>(
+  async (request, ctx) => {
+    const { id } = await ctx.params;
 
-  const message = await prisma.message.update({
-    where: { id: BigInt(resolvedParams.id), isDeleted: false },
-    data: { isDeleted: true },
-  });
+    const existing = await prisma.message.findFirst({
+      where: { id: BigInt(id), isDeleted: false },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ code: 404, message: 'Message not found' }, { status: 404 });
+    }
+    const message = await prisma.message.update({
+      where: { id: BigInt(id) },
+      data: { isDeleted: true },
+    });
 
-  return NextResponse.json({ code: 200, data: message });
-}
+    return NextResponse.json({
+      code: 200,
+      data: serializeMessage(message as unknown as Record<string, unknown>),
+    });
+  },
+  'admin'
+);

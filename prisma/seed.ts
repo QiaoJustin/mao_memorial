@@ -79,12 +79,15 @@ async function main() {
   });
   console.log('✓ 6个年代分类已导入');
 
-  const passwordHash = await bcrypt.hash('admin123', 10);
+  // ⚠️ 警告：以下默认密码仅用于开发环境，生产部署前必须修改！
+  // P0-11: admin 与 editor 使用独立 hash，避免共用密码导致权限混淆
+  const adminPasswordHash = await bcrypt.hash('admin123', 10);
+  const editorPasswordHash = await bcrypt.hash('editor123', 10);
   await prisma.admin.createMany({
     data: [
       {
         username: 'admin',
-        passwordHash,
+        passwordHash: adminPasswordHash,
         name: '超级管理员',
         email: 'admin@mao-memorial.cn',
         role: 'super_admin',
@@ -92,7 +95,7 @@ async function main() {
       },
       {
         username: 'editor',
-        passwordHash,
+        passwordHash: editorPasswordHash,
         name: '内容编辑',
         email: 'editor@mao-memorial.cn',
         role: 'editor',

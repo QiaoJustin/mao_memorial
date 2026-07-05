@@ -1,15 +1,9 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeSensitiveWord } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withAuth(async (request) => {
   const body = await request.json();
   const { words } = body;
 
@@ -29,11 +23,11 @@ export async function POST(request: Request) {
     const createdWord = await prisma.sensitiveWord.create({
       data: { word, level: 1, replacement: '*' },
     });
-    created.push(createdWord);
+    created.push(serializeSensitiveWord(createdWord as unknown as Record<string, unknown>));
   }
 
   return NextResponse.json({
     code: 200,
     data: { created, skipped },
   });
-}
+}, 'admin');

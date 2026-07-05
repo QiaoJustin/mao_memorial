@@ -8,7 +8,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   let description = '毛泽东主席生平中的重要时间节点';
 
   try {
-    const res = await fetch(`http://localhost:3000/api/v1/timeline/${id}`);
+    // P0-6: 使用环境变量，避免硬编码 localhost 导致生产环境 SEO 失效
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const res = await fetch(`${siteUrl}/api/v1/timeline/${id}`);
     const data = await res.json();
     if (data.data) {
       title = data.data.title;

@@ -16,6 +16,13 @@ interface Era {
   endYear: number;
 }
 
+// P3-3: 替换 any 类型，定义 API 返回的 era 原始结构
+interface ApiEra {
+  id: number;
+  name: string;
+  period?: string;
+}
+
 interface Photo {
   id: number;
   url: string;
@@ -37,7 +44,7 @@ async function fetchEras(): Promise<Era[]> {
     const res = await fetch('/api/v1/eras', { cache: 'force-cache' });
     const data = await res.json();
     const erasData = data.data || [];
-    return erasData.map((era: any) => {
+    return erasData.map((era: ApiEra) => {
       const [startYear, endYear] = era.period?.split('-').map((y: string) => parseInt(y, 10)) || [0, 0];
       return {
         id: era.id,

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Menu, User, Bell } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
@@ -9,28 +10,14 @@ interface AdminHeaderProps {
   breadcrumbs?: { label: string; href?: string }[];
 }
 
-interface UserInfo {
-  name: string;
-  role: string;
-}
-
 export default function AdminHeader({ onMenuToggle, title, breadcrumbs }: AdminHeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [user, setUser] = useState<UserInfo>({ name: '未知用户', role: 'editor' });
+  const { user, logout } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem('admin-token');
-    if (!token) {
-      setUser({ name: '未知用户', role: 'editor' });
-      return;
-    }
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setUser({ name: payload.username || '未知用户', role: payload.role || 'editor' });
-    } catch {
-      setUser({ name: '未知用户', role: 'editor' });
-    }
-  }, []);
+  const displayName = user?.name || user?.username || '未知用户';
+  const displayRole = user?.role || 'editor';
+
+  const roleLabel = displayRole === 'super_admin' ? '超级管理员' : displayRole === 'admin' ? '管理员' : '编辑';
 
   return (
     <header className="h-16 bg-surface border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
@@ -74,29 +61,22 @@ export default function AdminHeader({ onMenuToggle, title, breadcrumbs }: AdminH
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-bg transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-              {user.name.charAt(0)}
+              {displayName.charAt(0)}
             </div>
             <div className="text-left hidden sm:block">
-              <p className="text-sm font-medium text-text">{user.name}</p>
-              <p className="text-xs text-text-light">
-                {user.role === 'super_admin' ? '超级管理员' : user.role === 'admin' ? '管理员' : '编辑'}
-              </p>
+              <p className="text-sm font-medium text-text">{displayName}</p>
+              <p className="text-xs text-text-light">{roleLabel}</p>
             </div>
           </button>
 
           {userMenuOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-surface border border-border rounded-lg shadow-lg z-50">
               <div className="p-4 border-b border-border">
-                <p className="text-sm font-medium text-text">{user.name}</p>
-                <p className="text-xs text-text-light">
-                  {user.role === 'super_admin' ? '超级管理员' : user.role === 'admin' ? '管理员' : '编辑'}
-                </p>
+                <p className="text-sm font-medium text-text">{displayName}</p>
+                <p className="text-xs text-text-light">{roleLabel}</p>
               </div>
               <button
-                onClick={() => {
-                  localStorage.removeItem('admin-token');
-                  window.location.href = '/admin/login';
-                }}
+                onClick={logout}
                 className="w-full px-4 py-3 text-left text-sm text-text-light hover:bg-bg hover:text-text transition-colors"
               >
                 退出登录

@@ -1,11 +1,12 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 import {
   LayoutDashboard,
   Clock,
+  Image,
   MessageSquare,
   Users,
   Shield,
@@ -22,6 +23,7 @@ interface AdminSidebarProps {
 const menuItems = [
   { label: '仪表盘', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: '节点管理', href: '/admin/nodes', icon: Clock },
+  { label: '照片管理', href: '/admin/photos', icon: Image },
   { label: '留言审核', href: '/admin/messages', icon: MessageSquare },
   { label: '数据统计', href: '/admin/stats', icon: BarChart3 },
   { label: '管理员管理', href: '/admin/admins', icon: Users, role: 'super_admin' },
@@ -31,30 +33,9 @@ const menuItems = [
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
-  const [token, setToken] = useState<string | null>(null);
+  const { user, logout } = useAuth();
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('admin-token');
-    setToken(storedToken);
-  }, []);
-  
-  const handleLogout = () => {
-    localStorage.removeItem('admin-token');
-    setToken(null);
-    window.location.href = '/admin/login';
-  };
-
-  const getUserRole = () => {
-    if (!token) return 'editor';
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.role || 'editor';
-    } catch {
-      return 'editor';
-    }
-  };
-
-  const userRole = getUserRole();
+  const userRole = user?.role || 'editor';
 
   const hasAccess = (role?: string) => {
     if (!role) return true;
@@ -65,6 +46,8 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     };
     return (roleHierarchy[userRole] || 0) >= (roleHierarchy[role] || 0);
   };
+
+  const roleLabel = userRole === 'super_admin' ? '超级管理员' : userRole === 'admin' ? '管理员' : '编辑';
 
   return (
     <>
@@ -86,7 +69,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             </div>
             <div>
               <h1 className="font-bold text-text text-lg">后台管理</h1>
-              <p className="text-xs text-text-light">{userRole === 'super_admin' ? '超级管理员' : userRole === 'admin' ? '管理员' : '编辑'}</p>
+              <p className="text-xs text-text-light">{roleLabel}</p>
             </div>
           </div>
         </div>
@@ -117,7 +100,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
         <div className="p-4 border-t border-border">
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-light hover:bg-surface hover:text-text transition-colors"
           >
             <LogOut className="w-5 h-5" />

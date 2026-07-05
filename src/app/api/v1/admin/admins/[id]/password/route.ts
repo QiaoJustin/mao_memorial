@@ -1,33 +1,40 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeAdmin } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'super_admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+export const PUT = withAuth<{ params: Promise<{ id: string }> }>(
+  async (request, ctx) => {
+    const { id } = await ctx.params;
+    const body = await request.json();
+    const bcrypt = await import('bcryptjs');
 
-  const body = await request.json();
-  const bcrypt = await import('bcryptjs');
+    const existing = await prisma.admin.findFirst({
+      where: { id: BigInt(id), isDeleted: false },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ code: 404, message: 'Admin not found' }, { status: 404 });
+    }
+    const admin = await prisma.admin.update({
+      where: { id: BigInt(id) },
+      data: {
+        passwordHash: await bcrypt.hash(body.password, 10),
+        failedLoginCount: 0,
+        lockedUntil: null,
+        status: 'active',
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+      },
+    });
 
-  const admin = await prisma.admin.update({
-    where: { id: BigInt(resolvedParams.id), isDeleted: false },
-    data: {
-      passwordHash: await bcrypt.hash(body.password, 10),
-      failedLoginCount: 0,
-      lockedUntil: null,
-      status: 'active',
-    },
-    select: {
-      id: true,
-      username: true,
-      name: true,
-    },
-  });
-
-  return NextResponse.json({ code: 200, data: admin });
-}
+    return NextResponse.json({
+      code: 200,
+      data: serializeAdmin(admin as unknown as Record<string, unknown>),
+    });
+  },
+  'super_admin'
+);

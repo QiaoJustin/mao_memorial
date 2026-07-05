@@ -14,6 +14,21 @@ interface TimelineNode {
   isFeatured: boolean;
 }
 
+// P3-3: API 原始返回的 timeline item 类型（含 thumbnailUrl 字段，需在 map 中归一化为 photoUrl）
+interface ApiTimelineItem {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  dateSort: number;
+  location?: string;
+  viewCount: number;
+  eraName: string;
+  thumbnailUrl?: string;
+  photoUrl?: string;
+  isFeatured: boolean;
+}
+
 interface TimelineResponse {
   items: TimelineNode[];
   total: number;
@@ -47,7 +62,7 @@ export function useInfiniteTimeline(options: UseInfiniteTimelineOptions = {}) {
       const responseData = data.data || { items: [], total: 0, totalPages: 0 };
       return {
         ...responseData,
-        items: (responseData.items || []).map((item: any) => ({
+        items: (responseData.items || []).map((item: ApiTimelineItem) => ({
           ...item,
           photoUrl: item.thumbnailUrl || item.photoUrl,
         })),
@@ -88,7 +103,7 @@ export function useInfiniteTimeline(options: UseInfiniteTimelineOptions = {}) {
       const responseData = response.data || { items: [], total: 0, totalPages: 0 };
       const newData: TimelineResponse = {
         ...responseData,
-        items: (responseData.items || []).map((item: any) => ({
+        items: (responseData.items || []).map((item: ApiTimelineItem) => ({
           ...item,
           photoUrl: item.thumbnailUrl || item.photoUrl,
         })),

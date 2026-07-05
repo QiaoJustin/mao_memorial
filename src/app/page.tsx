@@ -6,7 +6,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TimelineCard from '@/components/TimelineCard';
 import PhotoCard from '@/components/PhotoCard';
-import MessageCard from '@/components/MessageCard';
+// P1-7: 统一使用新版 MessageCard（支持 isPinned 置顶标记）
+import MessageCard from '@/components/message/MessageCard';
 import ErasNav from '@/components/ErasNav';
 import SearchBar from '@/components/SearchBar';
 import { ArrowRight, BookOpen, Image, MessageCircle, Sparkles } from 'lucide-react';

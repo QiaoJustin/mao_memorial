@@ -3,6 +3,11 @@ import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+// P1-11: 转义正则特殊字符，防止用户输入导致正则注入或灾难性回溯
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const q = url.searchParams.get('q') || '';
@@ -53,16 +58,19 @@ export async function GET(request: Request) {
     },
   });
 
+  // P1-11: 对用户输入转义后再构造正则，防止正则注入
+  const escapedQ = escapeRegExp(q);
+
   const items = nodes.map(node => {
     const coverPhoto = node.photos[0];
     let description = node.description || '';
     if (description.includes(q)) {
-      description = description.replace(new RegExp(q, 'gi'), match => `<mark>${match}</mark>`);
+      description = description.replace(new RegExp(escapedQ, 'gi'), match => `<mark>${match}</mark>`);
     }
     return {
       id: Number(node.id),
       date: node.date,
-      title: node.title.replace(new RegExp(q, 'gi'), match => `<mark>${match}</mark>`),
+      title: node.title.replace(new RegExp(escapedQ, 'gi'), match => `<mark>${match}</mark>`),
       description,
       thumbnailUrl: coverPhoto?.thumbnailUrl || coverPhoto?.url || '',
       eraName: node.era?.name || '',

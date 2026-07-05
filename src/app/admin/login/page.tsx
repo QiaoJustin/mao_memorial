@@ -22,12 +22,14 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        credentials: 'include',
       });
       const data = await res.json();
 
       if (data.code === 200) {
-        localStorage.setItem('admin-token', data.data.token);
-        router.push('/admin/dashboard');
+        // P0-8: 后端通过 Set-Cookie 头自动设置 httpOnly cookie，前端无需手动存储 token
+        // 使用硬导航确保 cookie 被正确携带，避免 Next.js 客户端导航的缓存问题
+        window.location.href = '/admin/dashboard';
       } else {
         setError(data.message || '登录失败');
       }
@@ -95,11 +97,9 @@ export default function LoginPage() {
                 {isLoading ? '登录中...' : '登录'}
               </button>
             </div>
-
-            <p className="text-center text-xs text-text-light mt-6">
-              默认账号：admin / admin123
-            </p>
           </form>
+
+          {/* P0-11: 已删除默认账号明文展示，避免生产环境凭据泄露 */}
         </div>
       </div>
     </div>

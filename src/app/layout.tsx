@@ -56,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className={`${notoSerifSC.variable} ${notoSansSC.variable}`}>
+    <html lang="zh-CN" className={`${notoSerifSC.variable} ${notoSansSC.variable}`} data-scroll-behavior="smooth">
       <body className="font-sans">{children}</body>
     </html>
   );

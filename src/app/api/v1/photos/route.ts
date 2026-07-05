@@ -33,7 +33,15 @@ export async function GET(request: Request) {
   const skip = (validPage - 1) * validPageSize;
 
   const cacheKey = getPhotosCacheKey(validPage, validPageSize, era, year);
-  const cached = await getCache(cacheKey);
+  // 修复 TypeScript 类型推断：为 getCache 指定泛型参数，避免 cached 被推断为 {}
+  interface PhotosCacheResult {
+    items: unknown[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }
+  const cached = await getCache<PhotosCacheResult>(cacheKey);
 
   if (cached && !nodeId && cached.items && cached.items.length > 0) {
     return NextResponse.json({
@@ -68,9 +76,9 @@ export async function GET(request: Request) {
     where.node = { ...where.node as Record<string, unknown>, year };
   }
 
-  const orderBy = sort === 'dateSort' 
-    ? { node: { dateSort: 'asc' } }
-    : { [sort]: 'asc' };
+  const orderBy = sort === 'dateSort'
+    ? { node: { dateSort: 'asc' as const } }
+    : { [sort]: 'asc' as const };
 
   const [photos, total] = await Promise.all([
     prisma.photo.findMany({

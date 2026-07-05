@@ -1,25 +1,34 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeMessage } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'editor')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+export const PATCH = withAuth<{ params: Promise<{ id: string }> }>(
+  async (request, ctx) => {
+    const { id } = await ctx.params;
+    const { user } = ctx;
 
-  const message = await prisma.message.update({
-    where: { id: BigInt(resolvedParams.id), isDeleted: false },
-    data: {
-      status: 'approved',
-      reviewedBy: BigInt(payload.id),
-      reviewedAt: new Date(),
-    },
-    include: { reviewer: { select: { id: true, name: true } } },
-  });
+    const existing = await prisma.message.findFirst({
+      where: { id: BigInt(id), isDeleted: false },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ code: 404, message: 'Message not found' }, { status: 404 });
+    }
+    const message = await prisma.message.update({
+      where: { id: BigInt(id) },
+      data: {
+        status: 'approved',
+        reviewedBy: BigInt(user.id),
+        reviewedAt: new Date(),
+      },
+      include: { reviewer: { select: { id: true, name: true } } },
+    });
 
-  return NextResponse.json({ code: 200, data: message });
-}
+    return NextResponse.json({
+      code: 200,
+      data: serializeMessage(message as unknown as Record<string, unknown>),
+    });
+  },
+  'editor'
+);

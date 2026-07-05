@@ -1,87 +1,114 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeAdmin } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'super_admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+export const GET = withAuth<{ params: Promise<{ id: string }> }>(
+  async (request, ctx) => {
+    const { id } = await ctx.params;
 
-  const admin = await prisma.admin.findUnique({
-    where: { id: BigInt(resolvedParams.id), isDeleted: false },
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      status: true,
-      lastLoginAt: true,
-      loginCount: true,
-      createdAt: true,
-    },
-  });
+    const admin = await prisma.admin.findFirst({
+      where: { id: BigInt(id), isDeleted: false },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        lastLoginAt: true,
+        loginCount: true,
+        createdAt: true,
+      },
+    });
 
-  if (!admin) {
-    return NextResponse.json({ code: 404, message: 'Admin not found' }, { status: 404 });
-  }
+    if (!admin) {
+      return NextResponse.json({ code: 404, message: 'Admin not found' }, { status: 404 });
+    }
 
-  return NextResponse.json({ code: 200, data: admin });
-}
+    return NextResponse.json({
+      code: 200,
+      data: serializeAdmin(admin as unknown as Record<string, unknown>),
+    });
+  },
+  'super_admin'
+);
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'super_admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
+export const PUT = withAuth<{ params: Promise<{ id: string }> }>(
+  async (request, ctx) => {
+    const { id } = await ctx.params;
+    const body = await request.json();
 
-  const body = await request.json();
+    const existing = await prisma.admin.findFirst({
+      where: { id: BigInt(id), isDeleted: false },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ code: 404, message: 'Admin not found' }, { status: 404 });
+    }
+    const admin = await prisma.admin.update({
+      where: { id: BigInt(id) },
+      data: {
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+        role: body.role,
+        status: body.status,
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+    });
 
-  const admin = await prisma.admin.update({
-    where: { id: BigInt(resolvedParams.id), isDeleted: false },
-    data: {
-      name: body.name,
-      email: body.email,
-      phone: body.phone,
-      role: body.role,
-      status: body.status,
-    },
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      status: true,
-      createdAt: true,
-    },
-  });
+    return NextResponse.json({
+      code: 200,
+      data: serializeAdmin(admin as unknown as Record<string, unknown>),
+    });
+  },
+  'super_admin'
+);
 
-  return NextResponse.json({ code: 200, data: admin });
-}
+export const DELETE = withAuth<{ params: Promise<{ id: string }> }>(
+  async (request, ctx) => {
+    const { id } = await ctx.params;
+    // P2-1 修复：用 select 排除敏感字段（passwordHash、failedLoginCount、lockedUntil）
+    const existing = await prisma.admin.findFirst({
+      where: { id: BigInt(id), isDeleted: false },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ code: 404, message: 'Admin not found' }, { status: 404 });
+    }
+    const admin = await prisma.admin.update({
+      where: { id: BigInt(id) },
+      data: { isDeleted: true },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        lastLoginAt: true,
+        loginCount: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'super_admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const admin = await prisma.admin.update({
-    where: { id: BigInt(resolvedParams.id), isDeleted: false },
-    data: { isDeleted: true },
-  });
-
-  return NextResponse.json({ code: 200, data: admin });
-}
+    return NextResponse.json({
+      code: 200,
+      data: serializeAdmin(admin as unknown as Record<string, unknown>),
+    });
+  },
+  'super_admin'
+);

@@ -1,9 +1,24 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { validateLogin, generateToken } from '@/lib/auth';
+import { getClientIp } from '@/lib/get-client-ip';
+import { checkLoginRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // P1-10: 登录 IP 限流，防止暴力破解（5次/30分钟）
+  const ip = getClientIp(request);
+  const rateLimitResult = await checkLoginRateLimit(ip);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json({
+      code: 429,
+      message: '登录尝试过于频繁，请30分钟后再试',
+      data: { remaining: rateLimitResult.remaining },
+      timestamp: Date.now(),
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    }, { status: 429 });
+  }
+
   let body;
   try {
     body = await request.json();
@@ -49,11 +64,11 @@ export async function POST(request: Request) {
 
   const token = generateToken(admin);
 
+  // P0-8: 不再返回 token 到响应体，仅通过 httpOnly cookie 传递
   const response = NextResponse.json({
     code: 200,
     message: '登录成功',
     data: {
-      token,
       expiresIn: 86400,
       user: {
         id: Number(admin.id),
@@ -65,13 +80,13 @@ export async function POST(request: Request) {
       },
     },
     timestamp: Date.now(),
-    requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    requestId: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
   });
 
   response.cookies.set('admin_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     maxAge: 86400,
     path: '/',
   });

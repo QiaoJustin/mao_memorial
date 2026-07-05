@@ -1,44 +1,13 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { revokeToken } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
 
-export async function PUT(request: NextRequest) {
-  const token = request.cookies.get('admin_token')?.value || 
-    request.headers.get('Authorization')?.replace('Bearer ', '') || '';
-
-  if (!token) {
-    return NextResponse.json({
-      code: 401,
-      message: '请先登录',
-      data: null,
-      timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    });
-  }
-
-  const payload = verifyToken(token);
-
-  if (!payload) {
-    const response = NextResponse.json({
-      code: 401,
-      message: '登录已过期，请重新登录',
-      data: null,
-      timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    });
-
-    response.cookies.set('admin_token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-      path: '/',
-    });
-
-    return response;
-  }
+export const PUT = withAuth(async (request: NextRequest, ctx) => {
+  const { user } = ctx;
 
   let body;
   try {
@@ -49,7 +18,7 @@ export async function PUT(request: NextRequest) {
       message: '参数错误：请求体格式不正确',
       data: null,
       timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     });
   }
 
@@ -61,7 +30,7 @@ export async function PUT(request: NextRequest) {
       message: '参数错误：旧密码和新密码不能为空',
       data: null,
       timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     });
   }
 
@@ -71,12 +40,12 @@ export async function PUT(request: NextRequest) {
       message: '参数错误：新密码长度至少6位',
       data: null,
       timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     });
   }
 
   const admin = await prisma.admin.findUnique({
-    where: { id: payload.id },
+    where: { id: user.id },
     select: { id: true, passwordHash: true },
   });
 
@@ -86,12 +55,11 @@ export async function PUT(request: NextRequest) {
       message: '用户不存在',
       data: null,
       timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     });
   }
 
-  const { compare, hash } = await import('bcryptjs');
-  const isOldPasswordValid = await compare(oldPassword, admin.passwordHash);
+  const isOldPasswordValid = await bcrypt.compare(oldPassword, admin.passwordHash);
 
   if (!isOldPasswordValid) {
     return NextResponse.json({
@@ -99,23 +67,29 @@ export async function PUT(request: NextRequest) {
       message: '旧密码不正确',
       data: null,
       timestamp: Date.now(),
-      requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     });
   }
 
-  const newPasswordHash = await hash(newPassword, 10);
+  const newPasswordHash = await bcrypt.hash(newPassword, 10);
 
   await prisma.admin.update({
-    where: { id: payload.id },
+    where: { id: user.id },
     data: { passwordHash: newPasswordHash },
   });
 
+  // P0-8: 改密成功后撤销当前 token，强制重新登录
+  const currentToken = request.cookies.get('admin_token')?.value;
+  if (currentToken) {
+    await revokeToken(currentToken);
+  }
+
   const response = NextResponse.json({
     code: 200,
-    message: '密码修改成功',
+    message: '密码修改成功，请重新登录',
     data: null,
     timestamp: Date.now(),
-    requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    requestId: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
   });
 
   response.cookies.set('admin_token', '', {
@@ -127,4 +101,4 @@ export async function PUT(request: NextRequest) {
   });
 
   return response;
-}
+});

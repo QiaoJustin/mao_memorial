@@ -66,35 +66,53 @@ export default function SearchPage({ searchParams }: PageProps) {
       return;
     }
 
+    // P3-7: 同步 query 到 URL，便于分享与收藏（replaceState 不触发重新渲染）
+    const newUrl = `/search?q=${encodeURIComponent(query)}`;
+    window.history.replaceState(null, '', newUrl);
+
+    // P0-5: 添加 AbortController 取消旧请求，避免快速输入时的竞态
+    const controller = new AbortController();
     setIsLoading(true);
+
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/v1/search?q=${encodeURIComponent(query)}&page=1&pageSize=10`
+          `/api/v1/search?q=${encodeURIComponent(query)}&page=1&pageSize=10`,
+          { signal: controller.signal }
         );
         const data = await res.json();
+
+        if (controller.signal.aborted) return;
 
         if (data.code === 200) {
           setResults(data.data.items || []);
           setTotal(data.data.total || 0);
 
-          const newHistory = [query, ...searchHistory.filter((h) => h !== query)].slice(0, MAX_HISTORY);
-          setSearchHistory(newHistory);
-          localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+          // P0-5: 使用函数式更新，避免将 searchHistory 放入依赖数组导致无限循环
+          setSearchHistory((prev) => {
+            const newHistory = [query, ...prev.filter((h) => h !== query)].slice(0, MAX_HISTORY);
+            localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+            return newHistory;
+          });
         } else {
           setResults([]);
           setTotal(0);
         }
-      } catch {
-        setResults([]);
-        setTotal(0);
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') {
+          setResults([]);
+          setTotal(0);
+        }
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
-  }, [query, searchHistory]);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   const handleRemoveHistory = (keyword: string) => {
     const newHistory = searchHistory.filter((h) => h !== keyword);

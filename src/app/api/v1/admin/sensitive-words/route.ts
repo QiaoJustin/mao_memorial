@@ -1,27 +1,21 @@
 import { prisma } from '@/lib/db';
-import { verifyToken, hasRole } from '@/lib/auth';
+import { withAuth } from '@/lib/with-auth';
+import { serializeSensitiveWord } from '@/lib/serializers';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async (request) => {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
-  const q = searchParams.get('q');
+  const q = searchParams.get('q') || searchParams.get('keyword');
   const category = searchParams.get('category');
 
   const where: Record<string, unknown> = { isActive: true };
-  
+
   if (q) {
     where.word = { contains: q as string };
   }
-  
+
   if (category) {
     where.category = category;
   }
@@ -39,23 +33,16 @@ export async function GET(request: Request) {
   return NextResponse.json({
     code: 200,
     data: {
-      list,
-      total,
-      totalPages: Math.ceil(total / pageSize),
+      list: list.map((w) => serializeSensitiveWord(w as unknown as Record<string, unknown>)),
+      total: Number(total),
+      totalPages: Math.ceil(Number(total) / pageSize),
       page,
       pageSize,
     },
   });
-}
+}, 'editor');
 
-export async function POST(request: Request) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const payload = verifyToken(token || '');
-  
-  if (!payload || !hasRole(payload.role, 'admin')) {
-    return NextResponse.json({ code: 401, message: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withAuth(async (request) => {
   const body = await request.json();
 
   const existing = await prisma.sensitiveWord.findUnique({ where: { word: body.word } });
@@ -72,5 +59,8 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ code: 200, data: word }, { status: 201 });
-}
+  return NextResponse.json(
+    { code: 200, data: serializeSensitiveWord(word as unknown as Record<string, unknown>) },
+    { status: 201 }
+  );
+}, 'admin');

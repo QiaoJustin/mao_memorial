@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { filterSensitiveWords } from '@/lib/sensitive';
 import { checkMessageRateLimit } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/get-client-ip';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +58,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  // P1-9: 使用 getClientIp 工具函数，正确解析 XFF 链中第一个 IP
+  const ip = getClientIp(request);
 
   const rateLimitResult = await checkMessageRateLimit(ip);
   if (!rateLimitResult.allowed) {
