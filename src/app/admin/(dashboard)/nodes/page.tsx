@@ -294,7 +294,7 @@ export default function NodesPage() {
                   <td className="px-4 py-4 text-sm text-text-light">{node.date}</td>
                   <td className="px-4 py-4 text-sm text-text-light">{node.photoCount}</td>
                   <td className="px-4 py-4 text-sm text-text-light">{node.viewCount}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     {node.isPublished ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                         <CheckCircle className="w-4 h-4" />

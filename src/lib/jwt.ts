@@ -44,7 +44,7 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
       return null;
     }
     if (!payload.jti) return null;
-    return payload as TokenPayload;
+    return payload as unknown as TokenPayload;
   } catch {
     return null;
   }

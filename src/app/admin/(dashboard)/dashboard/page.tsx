@@ -72,9 +72,13 @@ export default function DashboardPage() {
               const values = [statValues.totalNodes, statValues.totalPhotos, statValues.totalMessages, statValues.pendingMessages];
               return (
                 <div key={card.label} className="card p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-lg ${card.color} flex items-center justify-center`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg ${card.color} flex items-center justify-center flex-shrink-0`}>
                       <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-2xl font-bold text-text">{values[index].toLocaleString()}</p>
+                      <p className="text-sm text-text-light">{card.label}</p>
                     </div>
                     {index === 3 && statValues.pendingMessages > 0 && (
                       <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full animate-pulse">
@@ -82,8 +86,6 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-3xl font-bold text-text mb-1">{values[index].toLocaleString()}</p>
-                  <p className="text-text-light">{card.label}</p>
                 </div>
               );
             })}

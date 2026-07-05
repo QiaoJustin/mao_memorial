@@ -5,7 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminTableToolbar } from '@/components/admin/AdminTableToolbar';
 import { adminFetch } from '@/lib/admin-fetch';
-import { Plus, Edit, Trash2, Key, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Key, CheckCircle, XCircle, User } from 'lucide-react';
 
 interface Admin {
   id: number;
@@ -40,18 +40,15 @@ export default function AdminsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState<number | null>(null);
-  const [newAdmin, setNewAdmin] = useState({ username: '', name: '', password: '', role: 'editor', email: '', phone: '' });
+  const [newAdmin, setNewAdmin] = useState({ username: '', name: '', password: '', role: 'editor' as Admin['role'], email: '', phone: '' });
+  const [editAdmin, setEditAdmin] = useState<Admin | null>(null);
   const [newPassword, setNewPassword] = useState('');
 
-  // P1-5: 合并“搜索变化”与“page 变化”两个 Effect 为单个 Effect（依赖 [page, searchQuery]），
-  // 避免原结构中搜索变化时先 setPage(1) 再触发 page Effect 导致的两次请求；
-  // 同时在 Effect 内创建 AbortController，避免快速切换搜索时旧请求覆盖新请求。
   useEffect(() => {
-    // P1-5: 每次依赖变化创建新的 AbortController，用于取消上一次未完成的请求
     const controller = new AbortController();
     fetchAdmins(controller.signal);
-    // P1-5: 清理函数：依赖变化或组件卸载时取消进行中的请求
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, searchQuery]);
@@ -62,7 +59,6 @@ export default function AdminsPage() {
       let url = `/api/v1/admin/admins?page=${page}&pageSize=${pageSize}`;
       if (searchQuery) url += `&q=${encodeURIComponent(searchQuery)}`;
 
-      // P1-5: 传入 AbortSignal，使请求可被取消
       const res = await adminFetch(url, signal ? { signal } : undefined);
       const data = await res.json();
       if (data.code === 200) {
@@ -70,19 +66,14 @@ export default function AdminsPage() {
         setTotal(data.data.total);
       }
     } catch (err) {
-      // P1-5: 忽略 AbortController 取消触发的错误，避免 abort 被当作真实错误处理而误清空数据
       if (err instanceof Error && err.name === 'AbortError') return;
       setAdmins([]);
     } finally {
-      // P1-5: 被 abort 的请求不更新 loading 状态，避免旧请求的 finally 把新请求的 isLoading 重置为 false
       if (signal?.aborted) return;
       setIsLoading(false);
     }
   };
 
-  // P1-5: 搜索回调：更新搜索词的同时重置到第一页。
-  // 原结构在 Effect 内部 setPage(1) 会再次触发 page Effect 造成重复请求；
-  // 改为在搜索回调中调用 setPage(1)，React 18 会对同一事件内的多次 setState 批处理，使合并后的 Effect 只触发一次。
   const handleSearch = (value: string) => {
     setSearchQuery(value);
     setPage(1);
@@ -109,14 +100,30 @@ export default function AdminsPage() {
     } catch {}
   };
 
-  const handleUpdate = async (id: number, data: Partial<Admin>) => {
+  const handleEdit = async () => {
+    if (!editAdmin) return;
+    if (!editAdmin.name) {
+      alert('请填写姓名');
+      return;
+    }
     try {
-      const res = await adminFetch(`/api/v1/admin/admins/${id}`, {
+      const res = await adminFetch(`/api/v1/admin/admins/${editAdmin.id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          name: editAdmin.name,
+          email: editAdmin.email,
+          phone: editAdmin.phone,
+          role: editAdmin.role,
+          status: editAdmin.status,
+        }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (data.code === 200) {
+        setShowEditModal(false);
+        setEditAdmin(null);
         fetchAdmins();
+      } else {
+        alert(data.message || '更新失败');
       }
     } catch {}
   };
@@ -151,6 +158,11 @@ export default function AdminsPage() {
     } catch {}
   };
 
+  const openEditModal = (admin: Admin) => {
+    setEditAdmin(admin);
+    setShowEditModal(true);
+  };
+
   return (
     <AdminLayout title="管理员管理" breadcrumbs={[{ label: '管理员管理' }]}>
       <AdminTableToolbar
@@ -173,6 +185,7 @@ export default function AdminsPage() {
             <tr className="border-b border-border">
               <th className="px-4 py-3 text-left text-sm font-medium text-text-light">用户名</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-text-light">姓名</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-text-light">邮箱</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-text-light">角色</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-text-light">状态</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-text-light">登录次数</th>
@@ -182,13 +195,13 @@ export default function AdminsPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="text-center py-8">
+                <td colSpan={7} className="text-center py-8">
                   <div className="inline-block w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 </td>
               </tr>
             ) : admins.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-text-light">暂无数据</td>
+                <td colSpan={7} className="text-center py-8 text-text-light">暂无数据</td>
               </tr>
             ) : (
               admins.map((admin) => (
@@ -200,11 +213,12 @@ export default function AdminsPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-text">{admin.username}</p>
-                        <p className="text-xs text-text-light">{admin.email || '无邮箱'}</p>
+                        <p className="text-xs text-text-light">{admin.phone || '无电话'}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-4 text-sm text-text">{admin.name}</td>
+                  <td className="px-4 py-4 text-sm text-text-light">{admin.email || '无邮箱'}</td>
                   <td className="px-4 py-4">
                     {roles.map((role) => role.value === admin.role && (
                       <span key={role.value} className={`text-sm font-medium ${role.color}`}>
@@ -231,15 +245,16 @@ export default function AdminsPage() {
                         <Key className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => handleUpdate(admin.id, { status: admin.status === 'active' ? 'disabled' : 'active' })}
+                        onClick={() => openEditModal(admin)}
                         className="p-2 text-text-light hover:text-accent transition-colors"
-                        title={admin.status === 'active' ? '禁用' : '启用'}
+                        title="编辑信息"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => handleDelete(admin.id)}
                         className="p-2 text-text-light hover:text-red-500 transition-colors"
+                        title="删除"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -289,6 +304,26 @@ export default function AdminsPage() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-text mb-2">邮箱</label>
+                <input
+                  type="email"
+                  value={newAdmin.email}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+                  placeholder="可选"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">电话</label>
+                <input
+                  type="tel"
+                  value={newAdmin.phone}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+                  placeholder="可选"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-text mb-2">角色</label>
                 <select
                   value={newAdmin.role}
@@ -307,6 +342,85 @@ export default function AdminsPage() {
               </button>
               <button onClick={handleAdd} className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-light transition-colors">
                 确认创建
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editAdmin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-text">编辑管理员</h3>
+                <p className="text-sm text-text-light">用户名: {editAdmin.username}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">姓名 *</label>
+                <input
+                  type="text"
+                  value={editAdmin.name}
+                  onChange={(e) => setEditAdmin({ ...editAdmin, name: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">邮箱</label>
+                <input
+                  type="email"
+                  value={editAdmin.email || ''}
+                  onChange={(e) => setEditAdmin({ ...editAdmin, email: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+                  placeholder="可选"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">电话</label>
+                <input
+                  type="tel"
+                  value={editAdmin.phone || ''}
+                  onChange={(e) => setEditAdmin({ ...editAdmin, phone: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+                  placeholder="可选"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">角色</label>
+                <select
+                  value={editAdmin.role}
+                  onChange={(e) => setEditAdmin({ ...editAdmin, role: e.target.value as Admin['role'] })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+                >
+                  {roles.map((role) => (
+                    <option key={role.value} value={role.value}>{role.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">状态</label>
+                <select
+                  value={editAdmin.status}
+                  onChange={(e) => setEditAdmin({ ...editAdmin, status: e.target.value as Admin['status'] })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+                >
+                  {statuses.map((status) => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setShowEditModal(false); setEditAdmin(null); }} className="flex-1 px-4 py-2 border border-border text-text rounded-lg hover:bg-bg transition-colors">
+                取消
+              </button>
+              <button onClick={handleEdit} className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-light transition-colors">
+                保存修改
               </button>
             </div>
           </div>
