@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Noto_Serif_SC, Noto_Sans_SC } from 'next/font/google';
+import MusicPlayerWrapper from '@/components/MusicPlayerWrapper';
 import './globals.css';
 
 /**
@@ -57,7 +58,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" className={`${notoSerifSC.variable} ${notoSansSC.variable}`} data-scroll-behavior="smooth">
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        {children}
+        <MusicPlayerWrapper />
+      </body>
     </html>
   );
 }

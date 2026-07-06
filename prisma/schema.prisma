@@ -206,6 +206,26 @@ model SensitiveWord {
   @@map("sensitive_words")
 }
 
+model Song {
+  id          BigInt   @id @default(autoincrement())
+  title       String   @db.VarChar(200)
+  artist      String?  @db.VarChar(200)
+  album       String?  @db.VarChar(200)
+  duration    Int?
+  audioUrl    String   @db.VarChar(500)
+  coverUrl    String?  @db.VarChar(500)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  playCount   Int      @default(0) @map("play_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  isDeleted   Boolean  @default(false) @map("is_deleted")
+
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("songs")
+}
+
 model AccessLog {
   id           BigInt        @id @default(autoincrement())
   path         String        @db.VarChar(500)

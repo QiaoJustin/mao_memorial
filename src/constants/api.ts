@@ -26,6 +26,10 @@ export const API = {
   AUTH_LOGIN: `${API_BASE}/auth/login`,
   AUTH_PASSWORD: `${API_BASE}/auth/password`,
 
+  // 音乐
+  MUSIC: `${API_BASE}/music`,
+  MUSIC_PLAY: (id: number | string) => `${API_BASE}/music/${id}/play`,
+
   // 管理后台
   ADMIN: {
     NODES: `${API_BASE}/admin/nodes`,
@@ -41,5 +45,7 @@ export const API = {
     STATS: `${API_BASE}/admin/stats`,
     UPLOAD: `${API_BASE}/admin/upload`,
     UPLOAD_BATCH: `${API_BASE}/admin/upload/batch`,
+    MUSIC: `${API_BASE}/admin/music`,
+    MUSIC_DETAIL: (id: number | string) => `${API_BASE}/admin/music/${id}`,
   },
 } as const;

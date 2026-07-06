@@ -30,7 +30,10 @@ export default function LoginPage() {
       } else {
         setError(data.message || '登录失败');
       }
-    } catch {
+    } catch (err: unknown) {
+      // AbortError 是 cleanup 触发的正常行为，忽略
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      console.error('登录请求失败:', err);
       setError('网络错误，请重试');
     } finally {
       setIsLoading(false);

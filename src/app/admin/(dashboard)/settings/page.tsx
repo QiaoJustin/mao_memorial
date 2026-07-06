@@ -66,7 +66,10 @@ export default function SettingsPage() {
       if (data.code === 200) {
         setSettings(data.data);
       }
-    } catch {
+    } catch (err: unknown) {
+      // AbortError 是 cleanup 触发的正常行为，忽略
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      console.error('加载设置失败:', err);
       setSettings({});
     } finally {
       setIsLoading(false);

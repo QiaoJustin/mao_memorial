@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/dashboard': '仪表盘',
   '/admin/nodes': '节点管理',
   '/admin/photos': '照片管理',
+  '/admin/music': '音乐管理',
   '/admin/messages': '留言审核',
   '/admin/admins': '管理员管理',
   '/admin/sensitive-words': '敏感词管理',
