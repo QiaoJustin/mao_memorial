@@ -58,7 +58,7 @@ export const POST = withAuth(async (request, ctx) => {
       code: 200,
       message: '批量操作成功',
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ code: 500, message: '批量操作失败' }, { status: 500 });
   }
 }, 'editor');

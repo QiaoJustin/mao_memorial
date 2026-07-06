@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { jwtVerify, type JWTPayload } from 'jose';
+import { jwtVerify } from 'jose';
 
 /**
  * JWT 核心工具（Edge Runtime 兼容）
@@ -31,7 +31,7 @@ export interface TokenPayload {
  * 供 middleware（Edge Runtime）使用，做快速过滤
  * 真正的黑名单校验在 route handler 中由 verifyToken 异步完成
  */
-export async function verifyToken(token: string): Promise<TokenPayload | null> {
+export async function verifyTokenJose(token: string): Promise<TokenPayload | null> {
   try {
     const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
     // P2-5: 运行时校验关键字段类型，防止 token payload 被篡改或结构异常

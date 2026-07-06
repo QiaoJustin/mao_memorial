@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { adminFetch } from '@/lib/admin-fetch';
 import { ArrowLeft, Upload, Check, Image, X } from 'lucide-react';
 
@@ -100,14 +100,7 @@ export default function PhotoCreatePage() {
   };
 
   return (
-    <AdminLayout
-      title="新增照片"
-      breadcrumbs={[
-        { label: '照片管理', href: '/admin/photos' },
-        { label: '新增照片' },
-      ]}
-    >
-      <div className="card max-w-3xl">
+    <div className="card max-w-3xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Link href="/admin/photos" className="p-2 hover:bg-bg rounded-lg transition-colors">
@@ -297,6 +290,5 @@ export default function PhotoCreatePage() {
           </div>
         </form>
       </div>
-    </AdminLayout>
   );
 }

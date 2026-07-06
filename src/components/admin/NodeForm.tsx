@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { adminFetch } from '@/lib/admin-fetch';
 import { Save, Image, Calendar, Tag, Globe } from 'lucide-react';
 
@@ -135,38 +135,25 @@ export default function NodeForm({ mode, initialData, nodeId, eras, isLoading }:
     }
   };
 
-  const pageTitle = isCreate ? '新增节点' : '编辑节点';
-
   if (isLoading) {
     return (
-      <AdminLayout title={pageTitle}>
         <div className="card p-6">
           <div className="text-center py-8">
             <div className="inline-block w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
         </div>
-      </AdminLayout>
     );
   }
 
   if (!isCreate && !initialData) {
     return (
-      <AdminLayout title={pageTitle}>
         <div className="card p-6">
           <p className="text-text-light text-center py-8">节点不存在</p>
         </div>
-      </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout
-      title={pageTitle}
-      breadcrumbs={[
-        { label: '节点管理', href: '/admin/nodes' },
-        { label: pageTitle },
-      ]}
-    >
       <form onSubmit={handleSubmit} className="card p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
@@ -370,6 +357,5 @@ export default function NodeForm({ mode, initialData, nodeId, eras, isLoading }:
           </div>
         </div>
       </form>
-    </AdminLayout>
   );
 }

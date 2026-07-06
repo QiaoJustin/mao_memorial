@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/with-auth';
 import { NextResponse } from 'next/server';
 
-export const GET = withAuth(async (request) => {
+export const GET = withAuth(async (_request) => {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { adminFetch } from '@/lib/admin-fetch';
 import { Clock, Image, MessageSquare, AlertCircle, TrendingUp } from 'lucide-react';
 
@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const statValues = data?.overview || { totalNodes: 0, totalPhotos: 0, totalMessages: 0, pendingMessages: 0 };
 
   return (
-    <AdminLayout title="仪表盘">
+    <>
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {statCards.map((card) => (
@@ -187,6 +187,6 @@ export default function DashboardPage() {
           )}
         </>
       )}
-    </AdminLayout>
-  );
+    </>
+    );
 }

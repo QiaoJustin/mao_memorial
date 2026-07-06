@@ -10,7 +10,7 @@ import SearchBar from '@/components/SearchBar';
 import { Image, Filter } from 'lucide-react';
 
 interface Era {
-  id: number;
+  id: string;
   name: string;
   startYear: number;
   endYear: number;

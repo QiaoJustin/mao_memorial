@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
 import redis from './redis';
+import { logger } from './logger';
 import {
   jwt,
   JWT_SECRET,
@@ -15,8 +16,9 @@ import type { Admin } from '@prisma/client';
 
 // JWT 黑名单 key 前缀（P0-8: 支持 logout/改密后撤销 token）
 const JWT_BLACKLIST_PREFIX = 'jwt:blacklist:';
-const LOGIN_ATTEMPTS_LIMIT = 5;
-const LOCK_DURATION_MINUTES = 30;
+// 登录安全参数（可通过环境变量覆盖）
+const LOGIN_ATTEMPTS_LIMIT = parseInt(process.env.LOGIN_ATTEMPTS_LIMIT || '5', 10);
+const LOCK_DURATION_MINUTES = parseInt(process.env.LOCK_DURATION_MINUTES || '30', 10);
 
 // 重新导出 TokenPayload 与 verifyTokenSync，保持向后兼容
 export { type TokenPayload, type AdminRole, verifyTokenSync };
@@ -69,7 +71,7 @@ export async function isTokenRevoked(jti: string): Promise<boolean> {
     return exists === 1;
   } catch (error) {
     // P2-10: Redis 故障时 fail-open（token 仍有效），避免全局不可用；记录告警便于排查
-    console.error('[auth] Redis 故障，黑名单校验降级为允许:', error);
+    logger.error('[auth] Redis 故障，黑名单校验降级为允许:', error);
     return false;
   }
 }
@@ -141,8 +143,4 @@ export function hasRole(role: AdminRole, requiredRole: AdminRole): boolean {
     editor: 1,
   };
   return (roleHierarchy[role] || 0) >= (roleHierarchy[requiredRole] || 0);
-}
-
-export function requireRole(role: AdminRole, requiredRole: AdminRole): boolean {
-  return hasRole(role, requiredRole);
 }

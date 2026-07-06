@@ -1,0 +1,9 @@
+# SSL 证书目录
+# 生产环境部署时，将 SSL 证书文件放置于此目录：
+# - fullchain.pem：证书文件
+# - privkey.pem：私钥文件
+#
+# 本地开发可使用自签名证书：
+# openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+#   -keyout privkey.pem -out fullchain.pem \
+#   -subj "/CN=localhost"

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, User, Bell, X, Clock, MessageSquare } from 'lucide-react';
+import { Menu, Bell, X, Clock, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { adminFetch } from '@/lib/admin-fetch';
+import { ROLE_LABELS, DEFAULT_ROLE } from '@/constants/labels';
+import { API } from '@/constants/api';
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
@@ -27,9 +29,9 @@ export default function AdminHeader({ onMenuToggle, title, breadcrumbs }: AdminH
   const { user, logout } = useAuth();
 
   const displayName = user?.name || user?.username || '未知用户';
-  const displayRole = user?.role || 'editor';
+  const displayRole = user?.role || DEFAULT_ROLE;
 
-  const roleLabel = displayRole === 'super_admin' ? '超级管理员' : displayRole === 'admin' ? '管理员' : '编辑';
+  const roleLabel = ROLE_LABELS[displayRole] || '编辑';
 
   useEffect(() => {
     fetchNotifications();
@@ -38,7 +40,7 @@ export default function AdminHeader({ onMenuToggle, title, breadcrumbs }: AdminH
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const res = await adminFetch('/api/v1/admin/messages?status=pending&page=1&pageSize=5');
+      const res = await adminFetch(API.ADMIN.MESSAGES_PENDING);
       const data = await res.json();
       if (data.code === 200) {
         setNotifications(data.data.list);

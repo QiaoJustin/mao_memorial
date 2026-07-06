@@ -1,10 +1,11 @@
 import redis from './redis';
 
-const TIMELINE_CACHE_TTL = 5 * 60;
-const ERA_CACHE_TTL = 60 * 60;
-const SETTINGS_CACHE_TTL = 10 * 60;
-const SEARCH_SUGGEST_TTL = 10 * 60;
-const HOT_SEARCH_TTL = 60 * 60;
+// 缓存 TTL 常量（秒），可通过环境变量覆盖
+const TIMELINE_CACHE_TTL = parseInt(process.env.CACHE_TTL_TIMELINE || '300', 10);
+const ERA_CACHE_TTL = parseInt(process.env.CACHE_TTL_ERA || '3600', 10);
+const SETTINGS_CACHE_TTL = parseInt(process.env.CACHE_TTL_SETTINGS || '600', 10);
+const SEARCH_SUGGEST_TTL = parseInt(process.env.CACHE_TTL_SEARCH_SUGGEST || '600', 10);
+const HOT_SEARCH_TTL = parseInt(process.env.CACHE_TTL_HOT_SEARCH || '3600', 10);
 
 export interface CacheOptions {
   ttl?: number;

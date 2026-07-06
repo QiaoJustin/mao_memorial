@@ -5,7 +5,7 @@ import { use } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Calendar, MapPin, Image } from 'lucide-react';
+import { ArrowLeft, Calendar, Image } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ id: string }>;

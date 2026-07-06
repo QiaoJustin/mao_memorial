@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Calendar, Eye, MapPin, Tag, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { API } from '@/constants/api';
 
 interface Photo {
   id: number;
@@ -45,7 +46,7 @@ interface TimelineDetailViewProps {
 
 async function fetchNode(id: number): Promise<TimelineNode | null> {
   try {
-    const res = await fetch(`/api/v1/timeline/${id}`);
+    const res = await fetch(API.TIMELINE_DETAIL(id));
     const data = await res.json();
     return data.data || null;
   } catch {
@@ -55,7 +56,7 @@ async function fetchNode(id: number): Promise<TimelineNode | null> {
 
 async function fetchAdjacent(id: number): Promise<{ prev: AdjacentNode | null; next: AdjacentNode | null }> {
   try {
-    const res = await fetch(`/api/v1/timeline/${id}/adjacent`);
+    const res = await fetch(API.TIMELINE_ADJACENT(id));
     const data = await res.json();
     return data.data || { prev: null, next: null };
   } catch {
@@ -65,7 +66,7 @@ async function fetchAdjacent(id: number): Promise<{ prev: AdjacentNode | null; n
 
 async function recordView(id: number) {
   try {
-    await fetch(`/api/v1/timeline/${id}/view`, {
+    await fetch(API.TIMELINE_VIEW(id), {
       method: 'POST',
     });
   } catch {}

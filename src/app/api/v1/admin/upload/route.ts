@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { logger } from '@/lib/logger';
 
 const MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -52,7 +53,7 @@ export const POST = withAuth(async (request) => {
       },
     });
   } catch (error) {
-    console.error('[upload] 文件上传失败:', error);
+    logger.error('[upload] 文件上传失败:', error);
     return NextResponse.json({ code: 500, message: 'Upload failed' }, { status: 500 });
   }
 }, 'editor');

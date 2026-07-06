@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { adminFetch } from '@/lib/admin-fetch';
 import { ArrowLeft, Check } from 'lucide-react';
 
@@ -97,23 +97,14 @@ export default function PhotoEditPage({ params }: Props) {
 
   if (isLoading) {
     return (
-      <AdminLayout title="编辑照片">
-        <div className="card flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-        </div>
-      </AdminLayout>
+      <div className="card flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
   return (
-    <AdminLayout
-      title="编辑照片"
-      breadcrumbs={[
-        { label: '照片管理', href: '/admin/photos' },
-        { label: '编辑照片' },
-      ]}
-    >
-      <div className="card max-w-2xl">
+    <div className="card max-w-2xl">
         <div className="flex items-center gap-4 mb-6">
           <Link href="/admin/photos" className="p-2 hover:bg-bg rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5 text-text" />
@@ -268,6 +259,5 @@ export default function PhotoEditPage({ params }: Props) {
           </div>
         </form>
       </div>
-    </AdminLayout>
   );
 }

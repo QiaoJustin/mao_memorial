@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Menu, X } from 'lucide-react';
 import SearchBar from './SearchBar';
+import { NAV_ITEMS, SITE_NAME } from '@/constants/navigation';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -18,13 +19,6 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
-    { label: '首页', href: '/' },
-    { label: '时间轴', href: '/timeline' },
-    { label: '照片画廊', href: '/photos' },
-    { label: '留言纪念', href: '/messages' },
-  ];
-
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -38,12 +32,12 @@ export default function Header() {
               毛
             </div>
             <span className={`font-serif text-lg font-semibold transition-colors ${isScrolled ? 'text-text' : 'text-white'}`}>
-              毛主席生平纪念
+              {SITE_NAME}
             </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-            {navItems.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -90,7 +84,7 @@ export default function Header() {
       {isMobileMenuOpen && (
         <div className={`md:hidden absolute top-full left-0 right-0 transition-all ${isScrolled ? 'glass' : 'bg-bg/95 backdrop-blur-md'}`}>
           <nav className="container-page py-4 flex flex-col gap-2">
-            {navItems.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

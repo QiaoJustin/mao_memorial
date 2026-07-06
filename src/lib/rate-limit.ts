@@ -1,4 +1,5 @@
 import redis from './redis';
+import { logger } from './logger';
 
 export interface RateLimitOptions {
   key: string;
@@ -43,7 +44,7 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
     };
   } catch (error) {
     // P2-3: Redis 故障时降级为允许，避免全局不可用；记录告警便于排查
-    console.error('[rate-limit] Redis 故障，限流降级为允许:', error);
+    logger.error('[rate-limit] Redis 故障，限流降级为允许:', error);
     return {
       allowed: true,
       remaining: limit,
@@ -52,11 +53,19 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
   }
 }
 
+// 限流配置常量（可通过环境变量覆盖）
+const MESSAGE_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_MESSAGE || '5', 10);
+const MESSAGE_RATE_WINDOW = parseInt(process.env.RATE_LIMIT_MESSAGE_WINDOW || '3600', 10);
+const LOGIN_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_LOGIN || '5', 10);
+const LOGIN_RATE_WINDOW = parseInt(process.env.RATE_LIMIT_LOGIN_WINDOW || '1800', 10);
+const DEV_LOGIN_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_LOGIN_DEV || '100', 10);
+const DEV_LOGIN_RATE_WINDOW = parseInt(process.env.RATE_LIMIT_LOGIN_DEV_WINDOW || '60', 10);
+
 export async function checkMessageRateLimit(ip: string): Promise<RateLimitResult> {
   return checkRateLimit({
     key: `rate:message:${ip}`,
-    limit: 5,
-    windowSeconds: 3600,
+    limit: MESSAGE_RATE_LIMIT,
+    windowSeconds: MESSAGE_RATE_WINDOW,
   });
 }
 
@@ -67,13 +76,13 @@ export async function checkLoginRateLimit(ip: string): Promise<RateLimitResult> 
   if (process.env.NODE_ENV === 'development') {
     return checkRateLimit({
       key: `rate:login:ip:${ip}`,
-      limit: 100,
-      windowSeconds: 60,
+      limit: DEV_LOGIN_RATE_LIMIT,
+      windowSeconds: DEV_LOGIN_RATE_WINDOW,
     });
   }
   return checkRateLimit({
     key: `rate:login:ip:${ip}`,
-    limit: 5,
-    windowSeconds: 30 * 60,
+    limit: LOGIN_RATE_LIMIT,
+    windowSeconds: LOGIN_RATE_WINDOW,
   });
 }

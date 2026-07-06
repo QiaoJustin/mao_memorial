@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/admin/AdminLayout';
+
+
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminTableToolbar } from '@/components/admin/AdminTableToolbar';
 import { adminFetch } from '@/lib/admin-fetch';
+import { logger } from '@/lib/logger';
 import { Filter, Eye, Edit, Trash2, CheckCircle, XCircle, Star } from 'lucide-react';
 
 interface Node {
@@ -23,7 +24,7 @@ interface Node {
 }
 
 export default function NodesPage() {
-  const router = useRouter();
+  
   const [nodes, setNodes] = useState<Node[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -81,7 +82,7 @@ export default function NodesPage() {
     } catch (error) {
       // P1-5: 忽略 AbortController 主动取消触发的错误，避免误报
       if (error instanceof Error && error.name === 'AbortError') return;
-      console.error('Fetch nodes error:', error);
+      logger.error('Fetch nodes error:', error);
       setNodes([]);
     } finally {
       setIsLoading(false);
@@ -155,7 +156,7 @@ export default function NodesPage() {
   };
 
   return (
-    <AdminLayout title="节点管理" breadcrumbs={[{ label: '节点管理' }]}>
+    <>
       <AdminTableToolbar
         searchValue={searchQuery}
         onSearchChange={handleSearchChange}
@@ -340,6 +341,6 @@ export default function NodesPage() {
           <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         )}
       </div>
-    </AdminLayout>
-  );
+    </>
+    );
 }

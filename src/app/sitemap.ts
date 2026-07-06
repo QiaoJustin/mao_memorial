@@ -1,12 +1,11 @@
 import { prisma } from '@/lib/db';
 
 export default async function sitemap() {
-  const baseUrl = 'https://mao-memorial.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
   const staticRoutes = [
     { url: '/', lastModified: new Date(), priority: 1.0 },
     { url: '/timeline', lastModified: new Date(), priority: 0.9 },
-    { url: '/gallery', lastModified: new Date(), priority: 0.8 },
     { url: '/photos', lastModified: new Date(), priority: 0.8 },
     { url: '/messages', lastModified: new Date(), priority: 0.7 },
     { url: '/search', lastModified: new Date(), priority: 0.6 },

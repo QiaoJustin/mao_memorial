@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 interface Era {
-  id: number;
+  id: string;
   name: string;
   startYear: number;
   endYear: number;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/jwt';
+import { verifyTokenJose } from '@/lib/jwt';
 
 /**
  * P0-8: 服务端统一鉴权中间件
@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
 
   // 保护 admin 页面：未登录或 token 无效则重定向到登录页
   if (isProtectedAdminPage(pathname)) {
-    if (!token || !(await verifyToken(token))) {
+    if (!token || !(await verifyTokenJose(token))) {
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
   // 保护 admin API：未登录或 token 无效则返回 401
   if (isProtectedApi(pathname)) {
-    const payload = token ? await verifyToken(token) : null;
+    const payload = token ? await verifyTokenJose(token) : null;
     if (!payload) {
       return NextResponse.json(
         {

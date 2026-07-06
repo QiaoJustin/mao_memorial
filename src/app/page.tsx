@@ -13,7 +13,7 @@ import SearchBar from '@/components/SearchBar';
 import { ArrowRight, BookOpen, Image, MessageCircle, Sparkles } from 'lucide-react';
 
 interface Era {
-  id: number;
+  id: string;
   name: string;
   startYear: number;
   endYear: number;
@@ -49,6 +49,12 @@ interface Message {
 interface HotSearch {
   keyword: string;
   count: number;
+}
+
+interface SiteStats {
+  nodeCount: number;
+  photoCount: number;
+  messageCount: number;
 }
 
 async function fetchEras(): Promise<Era[]> {
@@ -103,27 +109,40 @@ async function fetchHotSearch(): Promise<HotSearch[]> {
   }
 }
 
+async function fetchStats(): Promise<SiteStats> {
+  try {
+    const res = await fetch('/api/v1/stats', { cache: 'force-cache' });
+    const data = await res.json();
+    return data.data || { nodeCount: 0, photoCount: 0, messageCount: 0 };
+  } catch {
+    return { nodeCount: 0, photoCount: 0, messageCount: 0 };
+  }
+}
+
 export default function HomePage() {
   const [eras, setEras] = useState<Era[]>([]);
   const [featuredNodes, setFeaturedNodes] = useState<FeaturedNode[]>([]);
   const [featuredPhotos, setFeaturedPhotos] = useState<Photo[]>([]);
   const [latestMessages, setLatestMessages] = useState<Message[]>([]);
   const [hotSearch, setHotSearch] = useState<HotSearch[]>([]);
+  const [stats, setStats] = useState<SiteStats>({ nodeCount: 0, photoCount: 0, messageCount: 0 });
 
   useEffect(() => {
     async function loadData() {
-      const [erasData, nodesData, photosData, messagesData, searchData] = await Promise.all([
+      const [erasData, nodesData, photosData, messagesData, searchData, statsData] = await Promise.all([
         fetchEras(),
         fetchFeaturedNodes(),
         fetchFeaturedPhotos(),
         fetchLatestMessages(),
         fetchHotSearch(),
+        fetchStats(),
       ]);
       setEras(erasData);
       setFeaturedNodes(nodesData);
       setFeaturedPhotos(photosData);
       setLatestMessages(messagesData);
       setHotSearch(searchData);
+      setStats(statsData);
     }
     loadData();
   }, []);
@@ -295,7 +314,7 @@ export default function HomePage() {
                   <BookOpen className="w-6 h-6" />
                 </div>
                 <div className="text-left">
-                  <p className="text-2xl font-bold">98</p>
+                  <p className="text-2xl font-bold">{stats.nodeCount}</p>
                   <p className="text-sm text-white/80">重要时间节点</p>
                 </div>
               </div>
@@ -304,7 +323,7 @@ export default function HomePage() {
                   <Image className="w-6 h-6" />
                 </div>
                 <div className="text-left">
-                  <p className="text-2xl font-bold">100+</p>
+                  <p className="text-2xl font-bold">{stats.photoCount}+</p>
                   <p className="text-sm text-white/80">珍贵历史照片</p>
                 </div>
               </div>
@@ -313,7 +332,7 @@ export default function HomePage() {
                   <MessageCircle className="w-6 h-6" />
                 </div>
                 <div className="text-left">
-                  <p className="text-2xl font-bold">1000+</p>
+                  <p className="text-2xl font-bold">{stats.messageCount}+</p>
                   <p className="text-sm text-white/80">缅怀留言</p>
                 </div>
               </div>

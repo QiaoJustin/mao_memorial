@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '@/constants/api';
+import { ADMIN_LOGIN_PATH } from '@/constants/navigation';
 
 /**
  * P0-8: 客户端鉴权 hook
@@ -39,7 +41,7 @@ export function useAuth(): UseAuthResult {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/auth/me', { credentials: 'include' });
+      const res = await fetch(API.AUTH_ME, { credentials: 'include' });
       const data = await res.json();
       if (data.code === 200) {
         setUser(data.data);
@@ -47,8 +49,8 @@ export function useAuth(): UseAuthResult {
         setUser(null);
         if (data.code === 401) {
           const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-          if (currentPath !== '/admin/login') {
-            router.replace('/admin/login');
+          if (currentPath !== ADMIN_LOGIN_PATH) {
+            router.replace(ADMIN_LOGIN_PATH);
           }
         }
       }
@@ -70,7 +72,7 @@ export function useAuth(): UseAuthResult {
       // 忽略错误，仍跳转登录页
     }
     setUser(null);
-    router.replace('/admin/login');
+    router.replace(ADMIN_LOGIN_PATH);
   }, [router]);
 
   useEffect(() => {

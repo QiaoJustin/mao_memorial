@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { logger } from './logger';
 
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -12,13 +13,11 @@ const redis = new Redis({
 });
 
 redis.on('connect', () => {
-  // eslint-disable-next-line no-console
-  console.log('Redis 客户端已连接');
+  logger.info('Redis 客户端已连接');
 });
 
 redis.on('error', (error) => {
-  // eslint-disable-next-line no-console
-  console.error('Redis 连接错误:', error);
+  logger.error('Redis 连接错误:', error);
 });
 
 export default redis;

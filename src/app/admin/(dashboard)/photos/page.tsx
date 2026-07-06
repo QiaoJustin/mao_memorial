@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminTableToolbar } from '@/components/admin/AdminTableToolbar';
 import { adminFetch } from '@/lib/admin-fetch';
@@ -86,7 +86,7 @@ export default function PhotosPage() {
   };
 
   return (
-    <AdminLayout title="照片管理" breadcrumbs={[{ label: '照片管理' }]}>
+    <>
       <AdminTableToolbar
         searchValue={searchQuery}
         onSearchChange={handleSearchChange}
@@ -233,6 +233,6 @@ export default function PhotosPage() {
           <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         )}
       </div>
-    </AdminLayout>
-  );
+    </>
+    );
 }

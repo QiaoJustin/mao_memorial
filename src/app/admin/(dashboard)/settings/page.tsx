@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { adminFetch } from '@/lib/admin-fetch';
-import { Save, Globe, Shield, Mail, Palette, Cloud } from 'lucide-react';
+import { Globe, Shield, Mail, Palette, Cloud } from 'lucide-react';
 
 interface Setting {
   id: number;
@@ -87,11 +87,6 @@ export default function SettingsPage() {
       }
     } catch {}
     setSavingKey(null);
-  };
-
-  const getDescription = (key: string) => {
-    const setting = ossSettingKeys.find((s) => s.key === key);
-    return setting?.description || '';
   };
 
   const getSettingValue = (key: string) => {
@@ -207,7 +202,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <AdminLayout title="系统设置" breadcrumbs={[{ label: '系统设置' }]}>
+    <>
       {isLoading ? (
         <div className="card p-6">
           <div className="text-center py-8">
@@ -249,6 +244,6 @@ export default function SettingsPage() {
           })}
         </div>
       )}
-    </AdminLayout>
-  );
+    </>
+    );
 }

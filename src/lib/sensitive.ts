@@ -10,6 +10,8 @@ interface TrieNode {
 let trieRoot: TrieNode | null = null;
 let lastUpdateTime = 0;
 const CACHE_TTL = 5 * 60 * 1000;
+// 敏感词阻断阈值：级别 >= BLOCK_LEVEL_THRESHOLD 的内容将被拒绝发布
+const BLOCK_LEVEL_THRESHOLD = 2;
 
 function createTrieNode(): TrieNode {
   return {
@@ -101,7 +103,7 @@ export async function filterSensitiveWords(content: string): Promise<FilterResul
     if (matchedWord && maxLevel > 0) {
       sensitiveWords.push({ word: matchedWord, level: maxLevel });
       
-      if (maxLevel >= 2) {
+      if (maxLevel >= BLOCK_LEVEL_THRESHOLD) {
         result.blocked = true;
         break;
       }

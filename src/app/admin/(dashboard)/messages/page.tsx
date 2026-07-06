@@ -2,11 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminTableToolbar } from '@/components/admin/AdminTableToolbar';
 import { adminFetch } from '@/lib/admin-fetch';
-import { CheckCircle, XCircle, Pin, Trash2 } from 'lucide-react';
+import { CheckCircle, XCircle, Pin } from 'lucide-react';
 
 interface Message {
   id: number;
@@ -109,7 +109,7 @@ function MessagesPageContent() {
       } else {
         alert(data.message || '拒绝操作失败');
       }
-    } catch (error) {
+    } catch {
       alert('拒绝操作失败，请重试');
     }
   };
@@ -136,14 +136,6 @@ function MessagesPageContent() {
         fetchMessages();
       }
     } catch {}
-  };
-
-  const handleSelectAll = () => {
-    if (selectedIds.length === messages.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(messages.map((m) => m.id));
-    }
   };
 
   const handleSelect = (id: number) => {
@@ -212,7 +204,7 @@ function MessagesPageContent() {
   };
 
   return (
-    <AdminLayout title="留言审核" breadcrumbs={[{ label: '留言审核' }]}>
+    <>
       <AdminTableToolbar
         searchValue={searchQuery}
         onSearchChange={handleSearchChange}
@@ -378,8 +370,8 @@ function MessagesPageContent() {
           </div>
         </div>
       )}
-    </AdminLayout>
-  );
+    </>
+    );
 }
 
 // P3-5: 导出包裹 Suspense 的默认组件

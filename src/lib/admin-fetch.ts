@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { ADMIN_LOGIN_PATH } from '@/constants/navigation';
 
 /**
  * P0-8: 管理后台 fetch 封装
@@ -23,9 +24,9 @@ export function setRouter(router: ReturnType<typeof useRouter>) {
 function redirectToLogin() {
   if (typeof window !== 'undefined') {
     if (routerRef) {
-      routerRef.replace('/admin/login');
+      routerRef.replace(ADMIN_LOGIN_PATH);
     } else {
-      window.location.href = '/admin/login';
+      window.location.href = ADMIN_LOGIN_PATH;
     }
   }
 }

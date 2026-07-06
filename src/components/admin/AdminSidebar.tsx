@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { ROLE_LABELS } from '@/constants/labels';
 import {
   LayoutDashboard,
   Clock,
@@ -47,7 +48,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     return (roleHierarchy[userRole] || 0) >= (roleHierarchy[role] || 0);
   };
 
-  const roleLabel = userRole === 'super_admin' ? '超级管理员' : userRole === 'admin' ? '管理员' : '编辑';
+  const roleLabel = ROLE_LABELS[userRole] || '编辑';
 
   return (
     <>

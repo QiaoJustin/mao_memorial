@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { adminFetch } from '@/lib/admin-fetch';
 import { TrendingUp, Users, Globe, FileText } from 'lucide-react';
 
@@ -38,7 +38,7 @@ export default function StatsPage() {
   };
 
   return (
-    <AdminLayout title="数据统计" breadcrumbs={[{ label: '数据统计' }]}>
+    <>
       <div className="card p-6 mb-6 flex items-center justify-between">
         <h3 className="font-semibold text-text">统计周期</h3>
         <div className="flex items-center gap-2">
@@ -167,6 +167,6 @@ export default function StatsPage() {
           <p className="text-text-light text-center py-8">暂无数据</p>
         </div>
       )}
-    </AdminLayout>
-  );
+    </>
+    );
 }

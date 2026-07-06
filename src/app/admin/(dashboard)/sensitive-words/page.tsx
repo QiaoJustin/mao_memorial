@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminTableToolbar } from '@/components/admin/AdminTableToolbar';
 import { adminFetch } from '@/lib/admin-fetch';
@@ -128,7 +128,7 @@ export default function SensitiveWordsPage() {
   };
 
   return (
-    <AdminLayout title="敏感词管理" breadcrumbs={[{ label: '敏感词管理' }]}>
+    <>
       <AdminTableToolbar
         searchValue={searchQuery}
         onSearchChange={handleSearch}
@@ -263,6 +263,6 @@ export default function SensitiveWordsPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
-  );
+    </>
+    );
 }

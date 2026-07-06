@@ -157,7 +157,9 @@
     @apply bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent;
   }
 
-  /* 背景渐变（深红渐变，用于英雄区） */
+  /* 背景渐变（深红渐变，用于英雄区/页面顶部横幅）
+   * 注：此样式为自定义 CSS utility，非 Tailwind 原生类名，
+   * 但因历史原因使用了 bg- 前缀命名，保持兼容性 */
   .bg-gradient-crimson {
     background: linear-gradient(135deg, #8b0000 0%, #2f0000 100%);
   }

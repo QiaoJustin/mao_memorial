@@ -1,7 +1,7 @@
 import { Metadata, ResolvingMetadata } from 'next';
 import TimelineDetailView from '@/components/timeline/TimelineDetailView';
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }, parent: ResolvingMetadata): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }, _parent: ResolvingMetadata): Promise<Metadata> {
   const resolvedParams = await params;
   const id = parseInt(resolvedParams.id, 10);
   let title = '时间节点详情';
