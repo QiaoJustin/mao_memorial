@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Menu, X } from 'lucide-react';
-import SearchBar from './SearchBar';
+import { Menu, X } from 'lucide-react';
 import { NAV_ITEMS, SITE_NAME } from '@/constants/navigation';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,17 +49,6 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
-            <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className={`p-2 rounded-full transition-colors hover:bg-black/10 ${
-                isScrolled ? 'text-text' : 'text-white'
-              }`}
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          </div>
-
           <button
             className={`md:hidden p-2 transition-colors ${
               isScrolled ? 'text-text' : 'text-white'
@@ -73,12 +60,6 @@ export default function Header() {
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
-
-        {isSearchOpen && (
-          <div className="md:hidden">
-            <SearchBar placeholder="搜索时间节点、事件..." />
-          </div>
-        )}
       </div>
 
       {isMobileMenuOpen && (
@@ -96,9 +77,6 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <div className="px-4 py-2">
-              <SearchBar placeholder="搜索时间节点、事件..." />
-            </div>
           </nav>
         </div>
       )}

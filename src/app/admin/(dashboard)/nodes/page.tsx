@@ -224,7 +224,7 @@ export default function NodesPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light">
+              <th className="w-10 px-4 py-3 text-left text-sm font-medium text-text-light">
                 <input
                   type="checkbox"
                   checked={selectedIds.length === nodes.length && nodes.length > 0}
@@ -232,19 +232,19 @@ export default function NodesPage() {
                   className="rounded"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light">标题</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light">年代</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light cursor-pointer hover:text-accent" onClick={() => handleSortChange('dateSort')}>
+              <th className="px-4 py-3 text-left text-sm font-medium text-text-light min-w-[200px]">标题</th>
+              <th className="w-28 px-4 py-3 text-left text-sm font-medium text-text-light">年代</th>
+              <th className="w-36 px-4 py-3 text-left text-sm font-medium text-text-light cursor-pointer hover:text-accent" onClick={() => handleSortChange('dateSort')}>
                 日期
                 {sortBy === 'dateSort' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light">照片</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light cursor-pointer hover:text-accent" onClick={() => handleSortChange('viewCount')}>
+              <th className="w-20 px-4 py-3 text-left text-sm font-medium text-text-light">照片</th>
+              <th className="w-20 px-4 py-3 text-left text-sm font-medium text-text-light cursor-pointer hover:text-accent" onClick={() => handleSortChange('viewCount')}>
                 浏览
                 {sortBy === 'viewCount' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light">状态</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-text-light">操作</th>
+              <th className="w-24 px-4 py-3 text-left text-sm font-medium text-text-light">状态</th>
+              <th className="w-28 px-4 py-3 text-left text-sm font-medium text-text-light">操作</th>
             </tr>
           </thead>
           <tbody>
