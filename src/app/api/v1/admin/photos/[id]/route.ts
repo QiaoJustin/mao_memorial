@@ -6,10 +6,13 @@ import { NextResponse } from 'next/server';
 export const GET = withAuth<{ params: Promise<{ id: string }> }>(
   async (request, ctx) => {
     const { id } = await ctx.params;
+    if (!id || id === 'undefined') {
+      return NextResponse.json({ code: 400, message: 'Invalid photo ID' }, { status: 400 });
+    }
 
     const photo = await prisma.photo.findFirst({
       where: { id: BigInt(id), isDeleted: false },
-      include: { node: { select: { id: true, title: true, date: true } } },
+      include: { node: { select: { title: true, date: true } } },
     });
 
     if (!photo) {
@@ -34,6 +37,10 @@ export const GET = withAuth<{ params: Promise<{ id: string }> }>(
 export const PUT = withAuth<{ params: Promise<{ id: string }> }>(
   async (request, ctx) => {
     const { id } = await ctx.params;
+    if (!id || id === 'undefined') {
+      return NextResponse.json({ code: 400, message: 'Invalid photo ID' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     const existing = await prisma.photo.findFirst({
@@ -57,7 +64,7 @@ export const PUT = withAuth<{ params: Promise<{ id: string }> }>(
         sortOrder: body.sortOrder || 0,
         isCover: body.isCover || false,
       },
-      include: { node: { select: { id: true, title: true } } },
+      include: { node: { select: { title: true } } },
     });
 
     const serialized = serializePhoto(photo as unknown as Record<string, unknown>);
@@ -77,6 +84,9 @@ export const PUT = withAuth<{ params: Promise<{ id: string }> }>(
 export const DELETE = withAuth<{ params: Promise<{ id: string }> }>(
   async (request, ctx) => {
     const { id } = await ctx.params;
+    if (!id || id === 'undefined') {
+      return NextResponse.json({ code: 400, message: 'Invalid photo ID' }, { status: 400 });
+    }
 
     const existing = await prisma.photo.findFirst({
       where: { id: BigInt(id), isDeleted: false },

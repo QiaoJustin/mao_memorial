@@ -47,5 +47,6 @@ export const API = {
     UPLOAD_BATCH: `${API_BASE}/admin/upload/batch`,
     MUSIC: `${API_BASE}/admin/music`,
     MUSIC_DETAIL: (id: number | string) => `${API_BASE}/admin/music/${id}`,
+    MUSIC_REORDER: `${API_BASE}/admin/music/reorder`,
   },
 } as const;

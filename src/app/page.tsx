@@ -10,6 +10,7 @@ import PhotoCard from '@/components/PhotoCard';
 import MessageCard from '@/components/message/MessageCard';
 import ErasNav from '@/components/ErasNav';
 import SearchBar from '@/components/SearchBar';
+import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Image, MessageCircle, Sparkles } from 'lucide-react';
 
 interface Era {
@@ -126,6 +127,8 @@ export default function HomePage() {
   const [latestMessages, setLatestMessages] = useState<Message[]>([]);
   const [hotSearch, setHotSearch] = useState<HotSearch[]>([]);
   const [stats, setStats] = useState<SiteStats>({ nodeCount: 0, photoCount: 0, messageCount: 0 });
+  const [flagUrl, setFlagUrl] = useState('/images/国旗.png');
+  const [emblemUrl, setEmblemUrl] = useState('/images/国徽.png');
 
   useEffect(() => {
     async function loadData() {
@@ -145,6 +148,17 @@ export default function HomePage() {
       setStats(statsData);
     }
     loadData();
+
+    // 从公开设置 API 获取国旗国徽 URL
+    fetch('/api/v1/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.code === 200 && data.data) {
+          if (data.data.flagUrl) setFlagUrl(data.data.flagUrl);
+          if (data.data.emblemUrl) setEmblemUrl(data.data.emblemUrl);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -156,6 +170,28 @@ export default function HomePage() {
         
         <div className="container-page relative pt-24 pb-16 md:pt-32 md:pb-24">
           <div className="max-w-4xl mx-auto text-center">
+            {/* 国旗国徽并排显示 */}
+            <div className="flex items-center justify-center gap-8 md:gap-14 mb-8">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              >
+                <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-white/5 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 ring-1 ring-white/10">
+                  <img src={flagUrl} alt="中华人民共和国国旗" className="w-full h-full object-contain" />
+                </div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
+              >
+                <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 ring-1 ring-accent/30">
+                  <img src={emblemUrl} alt="中华人民共和国国徽" className="w-full h-full object-contain" />
+                </div>
+              </motion.div>
+            </div>
+
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
               <Sparkles className="w-4 h-4 text-accent" />
               <span className="text-sm text-white/80">缅怀伟人 · 传承精神</span>

@@ -425,36 +425,34 @@ export default function MusicNewPage() {
         </div>
 
         {/* ========== FOOTER ACTIONS ========== */}
-        <div className="mt-8 flex items-center justify-between gap-4 pt-6 border-t border-white/5">
+        <div className="mt-8 flex items-center justify-center gap-4 pt-6 border-t border-white/5 mb-20">
           <Link
             href="/admin/music"
-            className="px-5 py-2.5 rounded-xl border border-white/10 text-text-light 
+            className="px-6 py-2.5 rounded-xl border border-white/10 text-text-light 
                        hover:bg-white/5 transition-all duration-200 text-sm"
           >
             取消
           </Link>
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving || !title || !audioUrl}
-              className="px-7 py-2.5 rounded-xl bg-accent text-white font-medium 
-                         hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed
-                         transition-all duration-200 flex items-center gap-2 text-sm
-                         shadow-lg shadow-accent/10"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  保存中...
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  保存
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={saving || !title || !audioUrl}
+            className="px-7 py-2.5 rounded-xl bg-accent text-white font-medium 
+                       hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed
+                       transition-all duration-200 flex items-center gap-2 text-sm
+                       shadow-lg shadow-accent/10"
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                保存中...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                保存
+              </>
+            )}
+          </button>
         </div>
       </form>
     </div>

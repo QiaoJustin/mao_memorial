@@ -32,7 +32,7 @@ function MessagesPageContent() {
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +48,7 @@ function MessagesPageContent() {
     const controller = new AbortController();
     fetchMessages(controller.signal);
     return () => controller.abort();
-  }, [page, activeTab, searchQuery]);
+  }, [page, pageSize, activeTab, searchQuery]);
 
   const fetchMessages = async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -338,7 +338,7 @@ function MessagesPageContent() {
         )}
 
         {!isLoading && messages.length > 0 && (
-          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         )}
       </div>
 

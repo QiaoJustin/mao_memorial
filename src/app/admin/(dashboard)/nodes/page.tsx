@@ -27,7 +27,7 @@ export default function NodesPage() {
   
   const [nodes, setNodes] = useState<Node[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,7 +50,7 @@ export default function NodesPage() {
     const controller = new AbortController();
     fetchNodes(controller.signal);
     return () => controller.abort();
-  }, [page, searchQuery, selectedEra, filterPublished, sortBy, sortOrder]);
+  }, [page, pageSize, searchQuery, selectedEra, filterPublished, sortBy, sortOrder]);
 
   const fetchEras = async () => {
     try {
@@ -338,7 +338,7 @@ export default function NodesPage() {
         </table>
 
         {!isLoading && nodes.length > 0 && (
-          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         )}
       </div>
     </>

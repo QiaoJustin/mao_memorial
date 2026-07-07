@@ -18,7 +18,7 @@ interface SensitiveWord {
 export default function SensitiveWordsPage() {
   const [words, setWords] = useState<SensitiveWord[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(50);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,8 +36,7 @@ export default function SensitiveWordsPage() {
     fetchWords(controller.signal);
     // P1-5: 清理函数：依赖变化或组件卸载时取消进行中的请求
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, searchQuery]);
+    }, [page, pageSize, searchQuery]);
 
   const fetchWords = async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -204,7 +203,7 @@ export default function SensitiveWordsPage() {
         )}
 
         {!isLoading && words.length > 0 && (
-          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         )}
       </div>
 

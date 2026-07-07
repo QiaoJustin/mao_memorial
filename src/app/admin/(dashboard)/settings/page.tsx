@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 import { adminFetch } from '@/lib/admin-fetch';
-import { Globe, Shield, Mail, Palette, Cloud } from 'lucide-react';
+import { Globe, Shield, Mail, Palette, Cloud, Flag } from 'lucide-react';
 
 interface Setting {
   id: number;
@@ -20,6 +20,7 @@ const categoryIcons: Record<string, typeof Globe> = {
   email: Mail,
   appearance: Palette,
   storage: Cloud,
+  site: Flag,
 };
 
 const categoryLabels: Record<string, string> = {
@@ -28,6 +29,7 @@ const categoryLabels: Record<string, string> = {
   email: '邮件设置',
   appearance: '外观设置',
   storage: '对象存储(OSS)',
+  site: '站点图标',
 };
 
 const ossSettingKeys = [
@@ -139,6 +141,24 @@ export default function SettingsPage() {
           />
         );
       default:
+        const isSiteImage = setting.category === 'site' && setting.key.endsWith('_url');
+        if (isSiteImage) {
+          return (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={setting.value}
+                onChange={(e) => handleChange(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-text focus:outline-none focus:border-accent"
+              />
+              {setting.value && (
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-border bg-white/5">
+                  <img src={setting.value} alt={setting.description || setting.key} className="w-full h-full object-contain" />
+                </div>
+              )}
+            </div>
+          );
+        }
         return (
           <input
             type="text"

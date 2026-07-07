@@ -77,9 +77,9 @@ export const useMusicStore = create<MusicState>((set, get) => ({
           return;
         }
       }
-      // Fallback to first song
+      // Fallback to first song - 首次访问时自动播放
       if (songs.length > 0 && !get().currentSong) {
-        set({ currentSong: songs[0] });
+        set({ currentSong: songs[0], isPlaying: true });
       }
     } catch {
       set({ isLoading: false });

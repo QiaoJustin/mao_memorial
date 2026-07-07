@@ -35,7 +35,7 @@ const statuses = [
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,8 +50,7 @@ export default function AdminsPage() {
     const controller = new AbortController();
     fetchAdmins(controller.signal);
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, searchQuery]);
+    }, [page, pageSize, searchQuery]);
 
   const fetchAdmins = async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -267,7 +266,7 @@ export default function AdminsPage() {
         </table>
 
         {!isLoading && admins.length > 0 && (
-          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         )}
       </div>
 

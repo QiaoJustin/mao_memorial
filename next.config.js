@@ -41,6 +41,8 @@ const nextConfig = {
   experimental: {
     // 优化包大小
     optimizePackageImports: ['lucide-react', 'antd'],
+    // 增大请求体大小上限以支持音乐文件上传（匹配路由中 50MB 的限制）
+    proxyClientMaxBodySize: '50mb',
   },
 
   // 编译时排除的包（服务端专用）

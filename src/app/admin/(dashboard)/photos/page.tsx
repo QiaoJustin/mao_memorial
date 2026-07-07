@@ -22,7 +22,7 @@ interface Photo {
 export default function PhotosPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,7 +32,7 @@ export default function PhotosPage() {
     const controller = new AbortController();
     fetchPhotos(controller.signal);
     return () => controller.abort();
-  }, [page, searchQuery]);
+  }, [page, pageSize, searchQuery]);
 
   const fetchPhotos = async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -230,7 +230,7 @@ export default function PhotosPage() {
         </table>
 
         {!isLoading && photos.length > 0 && (
-          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+          <AdminPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         )}
       </div>
     </>

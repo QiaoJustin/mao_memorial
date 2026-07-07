@@ -26,7 +26,7 @@ export const GET = withAuth(async (request) => {
   const [list, total] = await Promise.all([
     prisma.photo.findMany({
       where,
-      include: { node: { select: { id: true, title: true, date: true } } },
+      include: { node: { select: { title: true, date: true } } },
       orderBy: { sortOrder: 'asc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -76,7 +76,7 @@ export const POST = withAuth(async (request) => {
       sortOrder: body.sortOrder || 0,
       isCover: body.isCover || false,
     },
-    include: { node: { select: { id: true, title: true } } },
+    include: { node: { select: { title: true } } },
   });
 
   const serialized = serializePhoto(photo as unknown as Record<string, unknown>);
